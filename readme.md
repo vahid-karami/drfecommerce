@@ -1,13 +1,12 @@
-# Project Portfolio
+# Django REST Framework Ecommerce Project
 
 A Django + DRF application for showcasing personal projects.
 
 ## Tech stack
 
-- Python 3.12, Django 5, Django REST Framework
+- Python 3.12, Django 6, Django REST Framework 3
 - SQLite3
 - django-filter, DRF TokenAuthentication
-- Vanilla CSS + vanilla JS (no Bootstrap)
 - Gunicorn + Nginx (prod)
 - Docker / docker-compose
 
@@ -15,13 +14,13 @@ A Django + DRF application for showcasing personal projects.
 
 - Public read API with pagination, search, filter, ordering
 - Token-protected write API (POST / PATCH / PUT / DELETE)
-- Web UI: anonymous visitors can browse the project list; logged-in users can add, edit, and delete projects
+- Precise DataBase Design
+- Test with PyTest
 
 ## Repository layout
 
 ```
-project/    — Django application
-docker/     — Dockerfile, Nginx config, entrypoint
+
 ```
 
 ## Local setup (without Docker)
