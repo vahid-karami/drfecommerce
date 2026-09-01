@@ -1,5 +1,6 @@
 @import './styles/design-tokens.css';
 @import './styles/main.css';
+@import './styles/rtl.css';
 
 /* App Layout */
 .app {

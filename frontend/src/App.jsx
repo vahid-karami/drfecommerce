@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider, CartProvider, FavoritesProvider } from './context';
+import { useLanguage } from './hooks/useLanguage';
 import Header from './components/Header';
 import Home from './pages/Home';
 import Products from './pages/Products';
@@ -14,8 +15,9 @@ import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
 import Favorites from './pages/Favorites';
 
-
 function App() {
+  useLanguage();
+
   return (
     <Router>
       <AuthProvider>

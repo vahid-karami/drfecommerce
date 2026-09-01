@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useFavorites } from '../context/FavoritesContext';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export default function Header() {
+  const { t } = useTranslation();
   const { user, isAuthenticated, logout } = useAuth();
   const { cart } = useCart();
   const { favorites } = useFavorites();
@@ -20,8 +23,8 @@ export default function Header() {
     <header className="header">
       <div className="header-utility-bar">
         <div className="container utility-content">
-          <span>Free shipping on orders over $100</span>
-          <span>Expert support available</span>
+          <span>{t('header.freeShipping')}</span>
+          <span>{t('header.expertSupport')}</span>
         </div>
       </div>
 
@@ -33,23 +36,25 @@ export default function Header() {
           </Link>
 
           <nav className="header-nav">
-            <Link to="/products" className="nav-link">Shop</Link>
+            <Link to="/products" className="nav-link">{t('common.shop')}</Link>
             <div className="nav-dropdown">
-              <span className="nav-link">Shop by Body Part</span>
+              <span className="nav-link">{t('header.shopByBodyPart')}</span>
               <div className="dropdown-menu">
-                <Link to="/products?injury_type=knee">Knee</Link>
-                <Link to="/products?injury_type=ankle">Ankle</Link>
-                <Link to="/products?injury_type=back">Back</Link>
-                <Link to="/products?injury_type=shoulder">Shoulder</Link>
-                <Link to="/products?injury_type=wrist">Wrist</Link>
-                <Link to="/products?injury_type=elbow">Elbow</Link>
+                <Link to="/products?injury_type=knee">{t('bodyParts.knee')}</Link>
+                <Link to="/products?injury_type=ankle">{t('bodyParts.ankle')}</Link>
+                <Link to="/products?injury_type=back">{t('bodyParts.back')}</Link>
+                <Link to="/products?injury_type=shoulder">{t('bodyParts.shoulder')}</Link>
+                <Link to="/products?injury_type=wrist">{t('bodyParts.wrist')}</Link>
+                <Link to="/products?injury_type=elbow">{t('bodyParts.elbow')}</Link>
               </div>
             </div>
-            <Link to="/categories" className="nav-link">Categories</Link>
+            <Link to="/categories" className="nav-link">{t('header.categories')}</Link>
           </nav>
 
           <div className="header-actions">
-            <Link to="/products" className="icon-button" aria-label="Search">
+            <LanguageSwitcher />
+
+            <Link to="/products" className="icon-button" aria-label={t('common.search')}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8"/>
                 <path d="m21 21-4.3-4.3"/>
@@ -58,7 +63,7 @@ export default function Header() {
 
             {isAuthenticated ? (
               <>
-                <Link to="/favorites" className="icon-button" aria-label="Favorites">
+                <Link to="/favorites" className="icon-button" aria-label={t('common.favorites')}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                   </svg>
@@ -66,23 +71,23 @@ export default function Header() {
                     <span className="cart-badge">{favorites.total_items}</span>
                   )}
                 </Link>
-                <Link to="/profile" className="icon-button" aria-label="Account">
+                <Link to="/profile" className="icon-button" aria-label={t('common.profile')}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                     <circle cx="12" cy="7" r="4"/>
                   </svg>
                 </Link>
                 <button onClick={handleLogout} className="btn btn-ghost btn-sm">
-                  Logout
+                  {t('common.logout')}
                 </button>
               </>
             ) : (
               <Link to="/login" className="btn btn-ghost btn-sm">
-                Sign In
+                {t('common.signIn')}
               </Link>
             )}
 
-            <Link to="/cart" className="icon-button cart-button" aria-label="Cart">
+            <Link to="/cart" className="icon-button cart-button" aria-label={t('common.cart')}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
                 <path d="M3 6h18"/>
@@ -117,11 +122,11 @@ export default function Header() {
       {mobileMenuOpen && (
         <div className="mobile-menu">
           <nav className="mobile-nav">
-            <Link to="/products" onClick={() => setMobileMenuOpen(false)}>Shop All</Link>
-            <Link to="/categories" onClick={() => setMobileMenuOpen(false)}>Categories</Link>
-            <Link to="/favorites" onClick={() => setMobileMenuOpen(false)}>My Favorites</Link>
-            <Link to="/orders" onClick={() => setMobileMenuOpen(false)}>My Orders</Link>
-            <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>My Account</Link>
+            <Link to="/products" onClick={() => setMobileMenuOpen(false)}>{t('common.shop')}</Link>
+            <Link to="/categories" onClick={() => setMobileMenuOpen(false)}>{t('header.categories')}</Link>
+            <Link to="/favorites" onClick={() => setMobileMenuOpen(false)}>{t('header.myFavorites')}</Link>
+            <Link to="/orders" onClick={() => setMobileMenuOpen(false)}>{t('header.myOrders')}</Link>
+            <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>{t('header.myAccount')}</Link>
           </nav>
         </div>
       )}

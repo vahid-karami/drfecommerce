@@ -1,0 +1,229 @@
+/* RTL (Right-to-Left) Styles for Persian Language */
+
+[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] .header-content {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .header-nav {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .header-actions {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .logo-mark {
+  margin-left: var(--spacing-2);
+  margin-right: 0;
+}
+
+[dir="rtl"] .dropdown-menu {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] .hero-content {
+  text-align: right;
+}
+
+[dir="rtl"] .hero-actions {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .body-parts-grid,
+[dir="rtl"] .sports-grid,
+[dir="rtl"] .goals-grid {
+  direction: rtl;
+}
+
+[dir="rtl"] .products-layout {
+  direction: rtl;
+}
+
+[dir="rtl"] .filters-sidebar {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] .product-main {
+  direction: rtl;
+}
+
+[dir="rtl"] .product-gallery {
+  margin-left: var(--spacing-12);
+  margin-right: 0;
+}
+
+[dir="rtl"] .purchase-section {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .cart-layout {
+  direction: rtl;
+}
+
+[dir="rtl"] .cart-item {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .cart-summary {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] .checkout-content {
+  direction: rtl;
+}
+
+[dir="rtl"] .form-row {
+  direction: rtl;
+}
+
+[dir="rtl"] .order-card {
+  direction: rtl;
+}
+
+[dir="rtl"] .order-header {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .order-item {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .order-footer {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .order-timeline {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .profile-content {
+  direction: rtl;
+}
+
+[dir="rtl"] .profile-header {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .sidebar-link {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .detail-row {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .favorites-header {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .auth-card {
+  direction: rtl;
+}
+
+[dir="rtl"] .form-input,
+[dir="rtl"] .form-select,
+[dir="rtl"] .form-textarea {
+  text-align: right;
+}
+
+[dir="rtl"] .btn svg {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .breadcrumb {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .pagination {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .active-filters {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .filter-chip {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .size-options {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .quantity-selector {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .spec-item {
+  text-align: right;
+}
+
+[dir="rtl"] .review-header {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .trust-grid {
+  direction: rtl;
+}
+
+[dir="rtl"] .guides-grid {
+  direction: rtl;
+}
+
+[dir="rtl"] .guide-content {
+  text-align: right;
+}
+
+[dir="rtl"] .empty-state {
+  text-align: center;
+}
+
+[dir="rtl"] .loading {
+  direction: rtl;
+}
+
+/* Persian Font Support */
+[dir="rtl"] body {
+  font-family: 'Vazir', 'IRANSans', 'Samim', var(--font-family);
+  line-height: 1.8;
+}
+
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] h4,
+[dir="rtl"] h5,
+[dir="rtl"] h6 {
+  line-height: 1.4;
+}
+
+/* Persian Number Formatting */
+[dir="rtl"] .price,
+[dir="rtl"] .price-sale,
+[dir="rtl"] .price-original {
+  direction: ltr;
+  display: inline-block;
+}
+
+/* Mobile RTL */
+@media (max-width: 768px) {
+  [dir="rtl"] .mobile-nav {
+    text-align: right;
+  }
+
+  [dir="rtl"] .products-grid {
+    direction: rtl;
+  }
+
+  [dir="rtl"] .cart-item {
+    flex-wrap: wrap;
+  }
+}
