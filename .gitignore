@@ -11,3 +11,8 @@ db.sqlite3
 .env
 .coverage
 .vscode/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
