@@ -1,4 +1,4 @@
-# SportMed Shop - Sport Injury Equipment E-commerce
+# SportMed Shop - Sports Injury Recovery E-commerce
 
 A full-stack e-commerce application for selling sport injury recovery equipment, built with Django REST Framework backend and React frontend.
 
@@ -9,11 +9,89 @@ A full-stack e-commerce application for selling sport injury recovery equipment,
 - SQLite3 (development)
 - djangorestframework-simplejwt for JWT authentication
 - Pillow for image handling
+- django-cors-headers for frontend communication
 
 ### Frontend
-- React 18 with Vite
+- React 19 with Vite
 - React Router for navigation
 - Axios for API requests
+- Modern CSS with design tokens (CSS variables)
+
+---
+
+## Important Commands
+
+### Initial Setup
+```bash
+# Clone and navigate to project
+cd drfecommerce
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate
+
+# Install backend dependencies
+pip install -r requirements.txt
+
+# Run migrations
+python manage.py migrate
+
+# Create admin superuser
+python manage.py createsuperuser
+
+# Seed sample data (optional)
+python manage.py seed_demo_data
+```
+
+### Running the Application
+```bash
+# Terminal 1 - Backend (from project root)
+cd drfecommerce
+source venv/bin/activate
+python manage.py runserver
+
+# Terminal 2 - Frontend (from project root)
+cd drfecommerce/frontend
+npm install
+npm run dev
+```
+
+### Running Tests
+```bash
+# Run all backend tests
+cd drfecommerce
+pytest
+
+# Run tests with verbose output
+pytest -v
+
+# Run specific test file
+pytest drfecommerce/tests/test_api.py
+```
+
+### Build for Production
+```bash
+# Build frontend
+cd frontend
+npm run build
+
+# Collect static files (Django)
+cd ../drfecommerce
+python manage.py collectstatic
+```
+
+---
+
+## Access Points
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:8000/api/ |
+| Admin Panel | http://localhost:8000/admin/ |
+| API Root | http://localhost:8000/ |
+
+---
 
 ## Features
 
@@ -29,21 +107,32 @@ A full-stack e-commerce application for selling sport injury recovery equipment,
 - Search, filter by price, category, brand, size
 - Product images and detailed descriptions
 - Stock management
+- Featured products
 
 ### Shopping Cart
 - Add/remove/update items
 - Persistent cart for authenticated users
+- Stock validation
 
 ### Orders
 - Order creation from cart
-- Order history and tracking
+- Order history and detail view
+- Visual order tracking timeline
 - Order cancellation (for pending/confirmed orders)
 - Automatic stock management
 
+### Favorites/Wishlist
+- Add/remove products from favorites
+- Favorites page with product grid
+- Favorites count in header
+
 ### Reviews
-- Product reviews with ratings
+- Product reviews with star ratings
 - Verified purchase badge
 - One review per product per user
+- Review form on product detail page
+
+---
 
 ## Repository Layout
 
@@ -51,50 +140,32 @@ A full-stack e-commerce application for selling sport injury recovery equipment,
 drfecommerce/
 ├── drfecommerce/          # Django project settings
 │   ├── settings/
-│   ├── urls.py
-│   └── ...
+│   │   ├── base.py        # Shared settings
+│   │   ├── local.py       # Development settings
+│   │   └── production.py  # Production settings
+│   ├── urls.py            # Root URL configuration
+│   └── tests/             # API tests
 ├── accounts/              # User authentication & OTP
 ├── products/              # Product catalog
+│   └── management/commands/seed_demo_data.py
 ├── cart/                  # Shopping cart
 ├── orders/                # Order management
 ├── reviews/               # Product reviews
+├── favorites/             # Wishlist/favorites
 ├── frontend/              # React frontend
 │   ├── src/
 │   │   ├── api/           # API client & endpoints
 │   │   ├── components/    # Reusable components
-│   │   ├── context/       # Auth & Cart contexts
+│   │   ├── context/       # Auth, Cart, Favorites contexts
 │   │   ├── pages/         # Page components
-│   │   └── ...
-│   └── ...
+│   │   ├── styles/        # CSS design system
+│   │   └── App.jsx        # Main app with routes
+│   └── package.json
 ├── requirements.txt
 └── manage.py
 ```
 
-## Local Setup
-
-### Backend Setup
-
-```bash
-cd drfecommerce
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py runserver
-```
-
-Open `http://127.0.0.1:8000/`.
-
-### Frontend Setup
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Open `http://127.0.0.1:5173/`.
+---
 
 ## API Endpoints
 
@@ -119,7 +190,7 @@ Open `http://127.0.0.1:5173/`.
 | GET | `/api/products/featured/` | Featured products |
 | GET | `/api/products/injury_types/` | List injury types |
 
-### Query Params for Products
+**Query Params for Products:**
 - `?search=<text>` - Search by name, description, brand
 - `?category=<slug>` - Filter by category
 - `?injury_type=<type>` - Filter by injury type
@@ -127,7 +198,7 @@ Open `http://127.0.0.1:5173/`.
 - `?size=<size>` - Filter by size
 - `?min_price=<price>&max_price=<price>` - Price range
 - `?in_stock=true` - Only in-stock items
-- `?ordering=<field>` - Sort results
+- `?ordering=<field>` - Sort (price, -price, name, created_at)
 
 ### Cart
 
@@ -157,35 +228,80 @@ Open `http://127.0.0.1:5173/`.
 | PATCH | `/api/reviews/:id/update/` | Update review |
 | DELETE | `/api/reviews/:id/delete/` | Delete review |
 
+### Favorites
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/favorites/` | View favorites |
+| POST | `/api/favorites/add/` | Add to favorites |
+| DELETE | `/api/favorites/remove/` | Remove from favorites |
+| DELETE | `/api/favorites/clear/` | Clear favorites |
+
+---
+
 ## OTP Authentication Flow
 
 ### Registration
-1. Send OTP: `POST /api/auth/otp/send/` with `{"phone": "+1234567890", "otp_type": "register"}`
-2. Verify OTP: `POST /api/auth/otp/verify/` with `{"phone": "+1234567890", "code": "123456", "otp_type": "register"}`
-3. Complete registration: `POST /api/auth/register/` with user details
-
-### Login
-1. Send OTP: `POST /api/auth/otp/send/` with `{"phone": "+1234567890", "otp_type": "login"}`
-2. Verify OTP: `POST /api/auth/otp/verify/` with `{"phone": "+1234567890", "code": "123456", "otp_type": "login"}`
-3. Returns JWT tokens on successful verification
-
-### Password Reset
-1. Send OTP: `POST /api/auth/otp/send/` with `{"phone": "+1234567890", "otp_type": "reset_password"}`
-2. Reset password: `POST /api/auth/password/reset/` with phone, code, and new password
-
-## Running Tests
-
 ```bash
-cd drfecommerce
-pytest
+# 1. Send OTP
+curl -X POST http://localhost:8000/api/auth/otp/send/ \
+  -H "Content-Type: application/json" \
+  -d '{"phone": "+1234567890", "otp_type": "register"}'
+
+# 2. Verify OTP (use code from response)
+curl -X POST http://localhost:8000/api/auth/otp/verify/ \
+  -H "Content-Type: application/json" \
+  -d '{"phone": "+1234567890", "code": "123456", "otp_type": "register"}'
+
+# 3. Complete registration
+curl -X POST http://localhost:8000/api/auth/register/ \
+  -H "Content-Type: application/json" \
+  -d '{"phone": "+1234567890", "password": "securepass123", "first_name": "John"}'
 ```
 
-Tests cover:
-- OTP authentication (send, verify, register, login)
-- Product listing, filtering, and search
-- Cart operations (add, update, remove, clear)
-- Order creation and cancellation
-- Review creation and listing
+### Login
+```bash
+# 1. Send OTP
+curl -X POST http://localhost:8000/api/auth/otp/send/ \
+  -H "Content-Type: application/json" \
+  -d '{"phone": "+1234567890", "otp_type": "login"}'
+
+# 2. Verify OTP (returns JWT tokens)
+curl -X POST http://localhost:8000/api/auth/otp/verify/ \
+  -H "Content-Type: application/json" \
+  -d '{"phone": "+1234567890", "code": "123456", "otp_type": "login"}'
+```
+
+---
+
+## Adding Images
+
+### Product Images
+1. Go to http://localhost:8000/admin/
+2. Navigate to **Products** → **Products**
+3. Edit a product
+4. Scroll to **Product Images** section
+5. Click **Add Product Image** and upload
+6. Check **is_primary** for the main image
+
+### Category Images
+1. Go to **Products** → **Categories**
+2. Edit a category and upload an image
+
+### Homepage Images
+Edit `frontend/src/pages/Home.jsx` and replace the Unsplash URLs:
+```javascript
+const bodyParts = [
+  {
+    id: 'knee',
+    name: 'Knee',
+    image: 'YOUR_IMAGE_URL_HERE', // Replace with your image
+  },
+  // ...
+];
+```
+
+---
 
 ## Models
 
@@ -205,8 +321,46 @@ Tests cover:
 ### Order (orders)
 - Order with shipping details
 - Order items (snapshot of product at time of purchase)
-- Status tracking
+- Status tracking (pending → confirmed → processing → shipped → delivered)
 
 ### Review (reviews)
-- User reviews with ratings
+- User reviews with ratings (1-5)
 - Verified purchase tracking
+
+### Favorite (favorites)
+- One favorite list per user
+- Multiple favorite items
+
+---
+
+## Running Tests
+
+```bash
+cd drfecommerce
+pytest
+```
+
+Tests cover:
+- OTP authentication (send, verify, register, login)
+- Product listing, filtering, and search
+- Cart operations (add, update, remove, clear)
+- Order creation and cancellation
+- Review creation and listing
+
+---
+
+## Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+SECRET_KEY=your-secret-key-here
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+```
+
+---
+
+## License
+
+This project is for educational purposes.

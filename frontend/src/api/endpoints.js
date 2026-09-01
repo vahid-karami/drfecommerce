@@ -29,4 +29,9 @@ export const ENDPOINTS = {
   reviewCreate: (slug) => `${API_BASE_URL}/reviews/product/${slug}/create/`,
   reviewUpdate: (id) => `${API_BASE_URL}/reviews/${id}/update/`,
   reviewDelete: (id) => `${API_BASE_URL}/reviews/${id}/delete/`,
+
+  favorites: `${API_BASE_URL}/favorites/`,
+  favoriteAdd: `${API_BASE_URL}/favorites/add/`,
+  favoriteRemove: `${API_BASE_URL}/favorites/remove/`,
+  favoriteClear: `${API_BASE_URL}/favorites/clear/`,
 };

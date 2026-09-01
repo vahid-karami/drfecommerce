@@ -17,9 +17,41 @@ class OrderAdmin(admin.ModelAdmin):
         "status",
         "payment_status",
         "total",
+        "item_count",
         "created_at",
     ]
-    list_filter = ["status", "payment_status"]
-    search_fields = ["order_number", "user__phone"]
+    list_filter = ["status", "payment_status", "created_at"]
+    search_fields = ["order_number", "user__phone", "shipping_phone"]
     inlines = [OrderItemInline]
     readonly_fields = ["order_number", "created_at", "updated_at"]
+    list_editable = ["status", "payment_status"]
+    list_per_page = 50
+    fieldsets = (
+        (None, {
+            "fields": ("order_number", "user", "status", "payment_status")
+        }),
+        ("Shipping Information", {
+            "fields": (
+                "shipping_address",
+                "shipping_city",
+                "shipping_state",
+                "shipping_zip",
+                "shipping_country",
+                "shipping_phone",
+            )
+        }),
+        ("Financial", {
+            "fields": ("subtotal", "shipping_cost", "discount", "total")
+        }),
+        ("Notes", {
+            "fields": ("notes",),
+            "classes": ("collapse",)
+        }),
+        ("Timestamps", {
+            "fields": ("created_at", "updated_at")
+        }),
+    )
+
+    def item_count(self, obj):
+        return obj.items.count()
+    item_count.short_description = "Items"

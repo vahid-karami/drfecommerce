@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
 import { ENDPOINTS } from '../api/endpoints';
 import { useCart } from '../context/CartContext';
-import './Checkout.css';
+
 
 export default function Checkout() {
   const navigate = useNavigate();

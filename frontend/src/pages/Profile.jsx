@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../api/client';
 import { ENDPOINTS } from '../api/endpoints';
-import './Profile.css';
+
 
 export default function Profile() {
   const { user, updateProfile, isAuthenticated } = useAuth();

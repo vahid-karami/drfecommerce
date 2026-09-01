@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import { ENDPOINTS } from '../api/endpoints';
-import './Orders.css';
+
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
