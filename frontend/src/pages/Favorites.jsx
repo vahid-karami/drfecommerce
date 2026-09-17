@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useFavorites } from '../context/FavoritesContext';
 import ProductCard from '../components/ProductCard';
 
 export default function Favorites() {
+  const { t } = useTranslation();
   const { favorites, removeFromFavorites, clearFavorites } = useFavorites();
 
   if (!favorites.items || favorites.items.length === 0) {
@@ -11,9 +13,9 @@ export default function Favorites() {
         <div className="container">
           <div className="empty-state">
             <span className="empty-state-icon">♡</span>
-            <h3>Your favorites list is empty</h3>
-            <p>Save products you love to find them later</p>
-            <Link to="/products" className="btn btn-primary">Browse Products</Link>
+            <h3>{t('favorites.emptyFavorites')}</h3>
+            <p>{t('favorites.emptyFavoritesDesc')}</p>
+            <Link to="/products" className="btn btn-primary">{t('cart.browseProducts')}</Link>
           </div>
         </div>
       </div>
@@ -24,9 +26,9 @@ export default function Favorites() {
     <div className="favorites-page">
       <div className="container">
         <div className="favorites-header">
-          <h1>My Favorites</h1>
+          <h1>{t('favorites.myFavorites')}</h1>
           <button onClick={clearFavorites} className="btn btn-ghost btn-sm">
-            Clear All
+            {t('common.clearAll')}
           </button>
         </div>
 
@@ -37,7 +39,7 @@ export default function Favorites() {
               <button
                 onClick={() => removeFromFavorites(item.product.id)}
                 className="remove-favorite-btn"
-                aria-label="Remove from favorites"
+                aria-label={t('favorites.removeFromFavorites')}
               >
                 ×
               </button>

@@ -14,15 +14,19 @@ i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    resources,
-    fallbackLng: 'en',
-    interpolation: {
-      escapeValue: false,
-    },
-    detection: {
-      order: ['localStorage', 'navigator'],
-      caches: ['localStorage'],
-    },
+  resources,
+  lng: 'fa',
+  fallbackLng: 'fa',
+  interpolation: {
+    escapeValue: false,
+  },
+  detection: {
+    order: ['localStorage', 'navigator'],
+    caches: ['localStorage'],
+  },
+  react: {
+    useSuspense: false,
+  },
   });
 
 export default i18n;

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import apiClient from '../api/client';
 import { ENDPOINTS } from '../api/endpoints';
 
-
 export default function Categories() {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,14 +24,14 @@ export default function Categories() {
   }, []);
 
   if (loading) {
-    return <div className="loading">Loading categories...</div>;
+    return <div className="loading">{t('common.loading')}</div>;
   }
 
   return (
     <div className="categories-page">
-      <h1>Shop by Category</h1>
+      <h1>{t('header.categories')}</h1>
       <p className="page-description">
-        Browse our selection of sports recovery equipment by category
+        {t('categories.description')}
       </p>
 
       <div className="categories-grid">
@@ -51,7 +52,7 @@ export default function Categories() {
               <h2>{category.name}</h2>
               <p>{category.description}</p>
               <span className="product-count">
-                {category.product_count} products
+                {t('products.productsCount', { count: category.product_count })}
               </span>
             </div>
           </Link>
@@ -59,7 +60,7 @@ export default function Categories() {
       </div>
 
       {categories.length === 0 && (
-        <p className="no-categories">No categories available.</p>
+        <p className="no-categories">{t('common.noProducts')}</p>
       )}
     </div>
   );

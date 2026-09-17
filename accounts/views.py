@@ -11,6 +11,7 @@ from .serializers import (
     PasswordResetSerializer,
     UserProfileSerializer,
     UserRegistrationSerializer,
+    UserLoginSerializer,
 )
 
 User = get_user_model()
@@ -138,45 +139,58 @@ def register(request):
     serializer = UserRegistrationSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
-    phone = serializer.validated_data["phone"]
+    username = serializer.validated_data.get("username", "").strip()
+    phone = serializer.validated_data.get("phone", "").strip()
+    password = serializer.validated_data["password"]
+    first_name = serializer.validated_data.get("first_name", "")
+    last_name = serializer.validated_data.get("last_name", "")
+    email = serializer.validated_data.get("email", "")
 
-    try:
-        user = User.objects.get(phone=phone)
-    except User.DoesNotExist:
-        user = None
+    identifier = username or phone
+    phone_val = phone or username
+    username_val = username or phone
 
-    if user and not user.is_verified:
-        return Response(
-            {"error": "Please verify your phone number first with OTP."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    from django.db.models import Q
 
-    if user and user.has_usable_password():
+    existing_user = User.objects.filter(
+        Q(phone__iexact=identifier) | Q(username__iexact=identifier)
+    ).first()
+
+    if existing_user and existing_user.has_usable_password():
         return Response(
             {"error": "User already registered. Please login."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    if user:
-        user.set_password(serializer.validated_data["password"])
-        user.first_name = serializer.validated_data.get("first_name", "")
-        user.last_name = serializer.validated_data.get("last_name", "")
-        user.save()
-        tokens = get_tokens_for_user(user)
+    if existing_user:
+        existing_user.set_password(password)
+        if first_name:
+            existing_user.first_name = first_name
+        if last_name:
+            existing_user.last_name = last_name
+        if email:
+            existing_user.email = email
+        if username and not existing_user.username:
+            existing_user.username = username
+        existing_user.is_verified = True
+        existing_user.save()
+        tokens = get_tokens_for_user(existing_user)
         return Response(
             {
                 "message": "Registration successful.",
                 "tokens": tokens,
-                "user": UserProfileSerializer(user).data,
+                "user": UserProfileSerializer(existing_user).data,
             },
             status=status.HTTP_201_CREATED,
         )
 
     user = User.objects.create_user(
-        phone=phone,
-        password=serializer.validated_data["password"],
-        first_name=serializer.validated_data.get("first_name", ""),
-        last_name=serializer.validated_data.get("last_name", ""),
+        phone=phone_val,
+        username=username_val,
+        password=password,
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
         is_verified=True,
     )
     tokens = get_tokens_for_user(user)
@@ -236,7 +250,7 @@ def reset_password(request):
     )
 
 
-@api_view(["GET", "PATCH"])
+@api_view(["GET", "PUT", "PATCH"])
 @permission_classes([permissions.IsAuthenticated])
 def profile(request):
     user = request.user
@@ -248,3 +262,21 @@ def profile(request):
     serializer.is_valid(raise_exception=True)
     serializer.save()
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@permission_classes([permissions.AllowAny])
+def login_with_password(request):
+    serializer = UserLoginSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    user = serializer.validated_data["user"]
+    tokens = get_tokens_for_user(user)
+    return Response(
+        {
+            "message": "Login successful.",
+            "tokens": tokens,
+            "user": UserProfileSerializer(user).data,
+        },
+        status=status.HTTP_200_OK,
+    )

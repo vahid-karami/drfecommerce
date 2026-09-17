@@ -123,3 +123,91 @@ def order_cancel(request, order_number):
             item.product.save(update_fields=["stock"])
 
     return Response(OrderSerializer(order).data, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def order_pay_initiate(request, order_number):
+    try:
+        order = Order.objects.get(order_number=order_number, user=request.user)
+    except Order.DoesNotExist:
+        return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    if order.payment_status == Order.PAYMENT_STATUS_PAID:
+        return Response({"error": "This order is already paid."}, status=status.HTTP_400_BAD_REQUEST)
+
+    gateway_name = request.data.get("gateway", "zarinpal")
+    callback_url = request.data.get(
+        "callback_url",
+        request.build_absolute_uri(f"/api/orders/payment/verify/?order_number={order.order_number}&gateway={gateway_name}"),
+    )
+
+    from .payments import get_payment_gateway
+
+    gateway = get_payment_gateway(gateway_name)
+    payment_data = gateway.request_payment(order, callback_url)
+
+    return Response(
+        {
+            "order_number": order.order_number,
+            "gateway": gateway_name,
+            **payment_data,
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["POST", "GET"])
+@permission_classes([permissions.AllowAny])
+def order_pay_verify(request):
+    data = request.data if request.method == "POST" else request.query_params
+    order_number = data.get("order_number")
+    authority = data.get("Authority") or data.get("authority") or data.get("id")
+    gateway_name = data.get("gateway", "zarinpal")
+
+    if not order_number or not authority:
+        return Response(
+            {"error": "Missing order_number or payment authority."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        order = Order.objects.get(order_number=order_number)
+    except Order.DoesNotExist:
+        return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    if order.payment_status == Order.PAYMENT_STATUS_PAID:
+        return Response(
+            {"message": "Order already paid.", "order": OrderSerializer(order).data},
+            status=status.HTTP_200_OK,
+        )
+
+    from .payments import get_payment_gateway
+
+    gateway = get_payment_gateway(gateway_name)
+    amount = order.total
+    verification = gateway.verify_payment(authority, amount=amount)
+
+    if verification.get("success"):
+        order.payment_status = Order.PAYMENT_STATUS_PAID
+        order.status = Order.STATUS_CONFIRMED
+        order.save(update_fields=["payment_status", "status"])
+        return Response(
+            {
+                "success": True,
+                "message": "Payment successful and verified.",
+                "ref_id": verification.get("ref_id") or verification.get("track_id"),
+                "order": OrderSerializer(order).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    order.payment_status = Order.PAYMENT_STATUS_FAILED
+    order.save(update_fields=["payment_status"])
+    return Response(
+        {
+            "success": False,
+            "error": verification.get("error", "Payment verification failed."),
+        },
+        status=status.HTTP_400_BAD_REQUEST,
+    )

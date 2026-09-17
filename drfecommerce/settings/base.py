@@ -119,3 +119,8 @@ SIMPLE_JWT = {
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
 }
+
+AUTHENTICATION_BACKENDS = [
+    "accounts.backends.PhoneOrUsernameBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]

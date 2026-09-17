@@ -3,8 +3,10 @@ from django.db import models
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
+    name_fa = models.CharField(max_length=100, blank=True, verbose_name="Name (Persian)")
     slug = models.SlugField(unique=True)
     description = models.TextField(blank=True)
+    description_fa = models.TextField(blank=True, verbose_name="Description (Persian)")
     image = models.ImageField(upload_to="categories/", blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -16,6 +18,16 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_name(self, lang='en'):
+        if lang == 'fa' and self.name_fa:
+            return self.name_fa
+        return self.name
+
+    def get_description(self, lang='en'):
+        if lang == 'fa' and self.description_fa:
+            return self.description_fa
+        return self.description
 
 
 class Product(models.Model):
@@ -43,10 +55,16 @@ class Product(models.Model):
 
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="products")
     name = models.CharField(max_length=200)
+    name_fa = models.CharField(max_length=200, blank=True, verbose_name="Name (Persian)")
     slug = models.SlugField(unique=True)
     description = models.TextField()
+    description_fa = models.TextField(blank=True, verbose_name="Description (Persian)")
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    price_irr = models.DecimalField(max_digits=12, decimal_places=0, blank=True, null=True, verbose_name="Price (IRR)")
+    cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Cost Price")
+    cost_irr = models.DecimalField(max_digits=12, decimal_places=0, blank=True, null=True, verbose_name="Cost Price (IRR)")
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    discount_price_irr = models.DecimalField(max_digits=12, decimal_places=0, blank=True, null=True, verbose_name="Discount Price (IRR)")
     stock = models.PositiveIntegerField(default=0)
     injury_type = models.CharField(max_length=20, choices=INJURY_TYPE_CHOICES, default=INJURY_TYPE_GENERAL)
     brand = models.CharField(max_length=100, blank=True)
@@ -66,9 +84,27 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+    def get_name(self, lang='en'):
+        if lang == 'fa' and self.name_fa:
+            return self.name_fa
+        return self.name
+
+    def get_description(self, lang='en'):
+        if lang == 'fa' and self.description_fa:
+            return self.description_fa
+        return self.description
+
     @property
     def effective_price(self):
         return self.discount_price if self.discount_price else self.price
+
+    @property
+    def effective_price_irr(self):
+        if self.discount_price_irr:
+            return self.discount_price_irr
+        if self.price_irr:
+            return self.price_irr
+        return None
 
     @property
     def in_stock(self):

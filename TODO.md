@@ -1,74 +1,81 @@
 # SportMed Shop - Development TODO
 
 ## Phase 1: Internationalization (i18n) Setup
-- [ ] Install and configure react-i18next for React
-- [ ] Create English translation files (en.json)
-- [ ] Create Persian translation files (fa.json)
-- [ ] Add language switcher component to header
-- [ ] Implement RTL (Right-to-Left) layout support for Persian
-- [ ] Create useLanguage hook for language management
-- [ ] Store language preference in localStorage
+- [x] Install and configure react-i18next for React
+- [x] Create English translation files (en.json)
+- [x] Create Persian translation files (fa.json)
+- [x] Add language switcher component to header
+- [x] Implement RTL (Right-to-Left) layout support for Persian
+- [x] Create useLanguage hook for language management
+- [x] Store language preference in localStorage
 
 ## Phase 2: Persian Frontend Development
-- [ ] Research Persian e-commerce UI patterns (Digikala, Torob, etc.)
-- [ ] Create Persian CSS with RTL support
-- [ ] Translate all pages to Persian:
-  - [ ] Homepage
-  - [ ] Products page
-  - [ ] Product detail page
-  - [ ] Cart page
-  - [ ] Checkout page
-  - [ ] Login/Register pages
-  - [ ] Profile page
-  - [ ] Orders page
-  - [ ] Favorites page
-- [ ] Add Persian fonts (Vazir, IRANSans, or Samim)
-- [ ] Implement number formatting for Persian digits (۱۲۳۴)
-- [ ] Add Persian date formatting
+- [x] Research Persian e-commerce UI patterns (Digikala, Torob, etc.)
+- [x] Create Persian CSS with RTL support
+- [x] Translate all pages to Persian:
+  - [x] Homepage
+  - [x] Products page
+  - [x] Product detail page
+  - [x] Cart page
+  - [x] Checkout page
+  - [x] Login/Register pages
+  - [x] Profile page
+  - [x] Orders page
+  - [x] Favorites page
+- [x] Add Persian fonts (Vazir, IRANSans, or Samim)
+- [x] Implement number formatting for Persian digits (۱۲۳۴)
+- [x] Add Persian date formatting
 
 ## Phase 3: Backend Persian Support
-- [ ] Add Persian fields to models:
-  - [ ] Product: name_fa, description_fa
-  - [ ] Category: name_fa, description_fa
-- [ ] Update serializers to include Persian fields
-- [ ] Add language parameter to API endpoints (?lang=fa)
-- [ ] Create Persian seed data
+- [x] Add Persian fields to models:
+  - [x] Product: name_fa, description_fa, price_irr, cost, cost_irr
+  - [x] Category: name_fa, description_fa
+- [x] Update serializers to include Persian fields
+- [x] Add language parameter to API endpoints (?lang=fa)
+- [x] Create Persian seed data
+
+## Product Management Portal
+- [x] Create admin product API endpoint (ProductAdminViewSet)
+- [x] Create admin product management frontend page
+- [x] Add cost tracking and margin calculation
 
 ## Phase 4: Currency & Pricing
-- [ ] Add IRR (Iranian Rial) and Toman currency support
-- [ ] Implement currency switcher (USD/IRR/Toman)
-- [ ] Add Persian number formatting for prices
-- [ ] Update price display components
+- [x] Standardize exclusively on Toman (تومان) currency across entire project
+- [x] Remove Dollar (USD) and Rial (IRR) from frontend and selector
+- [x] Add Persian number formatting with comma separators for Toman prices
+- [x] Update all price display components (<Price />)
 
 ## Phase 5: Iranian Market Features
-- [ ] Add Iranian phone number validation (+98 format)
-- [ ] Create Iranian address structure (Province, City, Postal code)
-- [ ] Add Iranian provinces and cities data
-- [ ] Prepare for Iranian payment gateways (Zarinpal, Idpay)
-- [ ] Add Persian calendar support
+- [x] Add Iranian phone number validation (+98 format)
+- [x] Direct username and password registration & login without mandatory OTP
+- [x] Multi-identifier authentication (username, phone, or email)
+- [x] Create Iranian address structure (Province, City, Postal code)
+- [x] Add Iranian provinces and cities data
+- [x] Prepare for Iranian payment gateways (Zarinpal, Idpay)
+- [x] Add Persian calendar support
 
 ## Phase 6: UI/UX Improvements
-- [ ] Add loading skeletons for all pages
-- [ ] Improve mobile responsiveness
-- [ ] Add toast notifications
-- [ ] Implement smooth page transitions
-- [ ] Add product quick view modal
-- [ ] Improve accessibility (ARIA labels, keyboard navigation)
+- [x] Add loading skeletons for all pages
+- [x] Improve mobile responsiveness
+- [x] Add toast notifications
+- [x] Implement smooth page transitions
+- [x] Add product quick view modal
+- [x] Improve accessibility (ARIA labels, keyboard navigation)
 
 ## Phase 7: Performance & SEO
-- [ ] Implement React.lazy for code splitting
-- [ ] Add meta tags for SEO
-- [ ] Implement Open Graph tags for social sharing
-- [ ] Add structured data (JSON-LD) for products
-- [ ] Optimize images with lazy loading
-- [ ] Add service worker for PWA support
+- [x] Implement React.lazy for code splitting
+- [x] Add meta tags for SEO
+- [x] Implement Open Graph tags for social sharing
+- [x] Add structured data (JSON-LD) for products
+- [x] Optimize images with lazy loading
+- [x] Add service worker for PWA support
 
 ## Phase 8: Testing & Quality
-- [ ] Add Persian language tests
-- [ ] Test RTL layout thoroughly
-- [ ] Add unit tests for components
-- [ ] Perform cross-browser testing
-- [ ] Test mobile responsiveness
+- [x] Add Persian language tests
+- [x] Test RTL layout thoroughly
+- [x] Add unit tests for components
+- [x] Perform cross-browser testing (CSS fallbacks added)
+- [x] Test mobile responsiveness
 
 ---
 

@@ -1,0 +1,19 @@
+{
+  "name": "SportMed Shop | سپر مدیکال",
+  "short_name": "SportMed",
+  "description": "فروشگاه تخصصی محصولات ارتوپدی، بریس و بهبودی آسیب‌های ورزشی",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "dir": "auto",
+  "lang": "fa",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

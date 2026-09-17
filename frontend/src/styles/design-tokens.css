@@ -30,6 +30,7 @@
 
   /* Typography */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-fa: 'Vazirmatn', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
@@ -98,7 +99,190 @@
     --color-neutral-700: #e2e8f0;
     --color-neutral-800: #f1f5f9;
     --color-neutral-900: #f8fafc;
+
+    --color-primary: #60a5fa;
+    --color-primary-dark: #3b82f6;
+    --color-primary-light: #93c5fd;
+    --color-primary-50: #1e293b;
+    --color-primary-100: #334155;
+
+    --color-success: #34d399;
+    --color-success-light: #064e3b;
+    --color-warning: #fbbf24;
+    --color-warning-light: #78350f;
+    --color-error: #f87171;
+    --color-error-light: #450a0a;
+    --color-info: #60a5fa;
+    --color-info-light: #1e293b;
   }
+
+  .btn-primary {
+    color: white;
+  }
+
+  .btn-secondary {
+    background-color: var(--color-neutral-700);
+    border-color: var(--color-neutral-700);
+    color: var(--color-neutral-900);
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--color-neutral-600);
+    border-color: var(--color-neutral-600);
+    color: var(--color-neutral-900);
+  }
+
+  .btn-outline {
+    color: var(--color-primary-light);
+    border-color: var(--color-primary);
+  }
+
+  .btn-outline:hover:not(:disabled) {
+    background-color: var(--color-primary-50);
+    color: var(--color-primary-light);
+  }
+
+  .btn-ghost {
+    color: var(--color-neutral-400);
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    background-color: var(--color-neutral-100);
+    color: var(--color-neutral-200);
+  }
+
+  .form-input,
+  .form-select,
+  .form-textarea {
+    background-color: var(--color-neutral-100);
+    border-color: var(--color-neutral-200);
+    color: var(--color-neutral-800);
+  }
+
+  .form-input::placeholder {
+    color: var(--color-neutral-500);
+  }
+
+  .card {
+    border: 1px solid var(--color-neutral-200);
+  }
+
+  .dropdown-menu {
+    border: 1px solid var(--color-neutral-200);
+  }
+
+  .mobile-menu {
+    border-top: 1px solid var(--color-neutral-200);
+  }
+
+  .body-part-card,
+  .sport-card,
+  .goal-card,
+  .guide-card {
+    border: 1px solid var(--color-neutral-200);
+  }
+
+  .header {
+    border-bottom: 1px solid var(--color-neutral-200);
+  }
+}
+
+[data-theme="dark"] {
+  --color-neutral-50: #0f172a;
+  --color-neutral-100: #1e293b;
+  --color-neutral-200: #334155;
+  --color-neutral-300: #475569;
+  --color-neutral-400: #64748b;
+  --color-neutral-500: #94a3b8;
+  --color-neutral-600: #cbd5e1;
+  --color-neutral-700: #e2e8f0;
+  --color-neutral-800: #f1f5f9;
+  --color-neutral-900: #f8fafc;
+
+  --color-primary: #60a5fa;
+  --color-primary-dark: #3b82f6;
+  --color-primary-light: #93c5fd;
+  --color-primary-50: #1e293b;
+  --color-primary-100: #334155;
+
+  --color-success: #34d399;
+  --color-success-light: #064e3b;
+  --color-warning: #fbbf24;
+  --color-warning-light: #78350f;
+  --color-error: #f87171;
+  --color-error-light: #450a0a;
+  --color-info: #60a5fa;
+  --color-info-light: #1e293b;
+}
+
+[data-theme="dark"] .btn-primary {
+  color: white;
+}
+
+[data-theme="dark"] .btn-secondary {
+  background-color: var(--color-neutral-700);
+  border-color: var(--color-neutral-700);
+  color: var(--color-neutral-900);
+}
+
+[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-neutral-600);
+  border-color: var(--color-neutral-600);
+  color: var(--color-neutral-900);
+}
+
+[data-theme="dark"] .btn-outline {
+  color: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+[data-theme="dark"] .btn-outline:hover:not(:disabled) {
+  background-color: var(--color-primary-50);
+  color: var(--color-primary-light);
+}
+
+[data-theme="dark"] .btn-ghost {
+  color: var(--color-neutral-400);
+}
+
+[data-theme="dark"] .btn-ghost:hover:not(:disabled) {
+  background-color: var(--color-neutral-100);
+  color: var(--color-neutral-200);
+}
+
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] .form-textarea {
+  background-color: var(--color-neutral-100);
+  border-color: var(--color-neutral-200);
+  color: var(--color-neutral-800);
+}
+
+[data-theme="dark"] .form-input::placeholder {
+  color: var(--color-neutral-500);
+}
+
+[data-theme="dark"] .card {
+  border: 1px solid var(--color-neutral-200);
+}
+
+[data-theme="dark"] .dropdown-menu {
+  border: 1px solid var(--color-neutral-200);
+}
+
+[data-theme="dark"] .mobile-menu {
+  border-top: 1px solid var(--color-neutral-200);
+}
+
+[data-theme="dark"] .body-part-card,
+[data-theme="dark"] .sport-card,
+[data-theme="dark"] .goal-card,
+[data-theme="dark"] .guide-card {
+  border: 1px solid var(--color-neutral-200);
+}
+
+[data-theme="dark"] .header {
+  border-bottom: 1px solid var(--color-neutral-200);
 }
 
 /* Base Styles */
@@ -270,7 +454,7 @@ button {
 
 /* Card System */
 .card {
-  background: white;
+  background: var(--color-neutral-50);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
   overflow: hidden;

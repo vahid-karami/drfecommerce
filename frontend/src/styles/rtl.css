@@ -192,7 +192,7 @@
 
 /* Persian Font Support */
 [dir="rtl"] body {
-  font-family: 'Vazir', 'IRANSans', 'Samim', var(--font-family);
+  font-family: var(--font-family-fa);
   line-height: 1.8;
 }
 
@@ -203,6 +203,7 @@
 [dir="rtl"] h5,
 [dir="rtl"] h6 {
   line-height: 1.4;
+  font-family: var(--font-family-fa);
 }
 
 /* Persian Number Formatting */
@@ -211,6 +212,11 @@
 [dir="rtl"] .price-original {
   direction: ltr;
   display: inline-block;
+}
+
+.persian-numbers {
+  font-feature-settings: "ss01";
+  letter-spacing: 0;
 }
 
 /* Mobile RTL */

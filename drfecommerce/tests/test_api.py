@@ -111,6 +111,60 @@ class TestOTPAuthentication:
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+    def test_register_with_username(self, api_client):
+        url = reverse("accounts:register")
+        response = api_client.post(
+            url,
+            {
+                "username": "newuser123",
+                "password": "securepass123",
+                "first_name": "New",
+                "last_name": "User",
+            },
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert "tokens" in response.data
+        assert response.data["user"]["username"] == "newuser123"
+
+    def test_register_duplicate_username(self, api_client):
+        User.objects.create_user(username="existinguser", password="securepass123")
+        url = reverse("accounts:register")
+        response = api_client.post(
+            url,
+            {"username": "existinguser", "password": "securepass123"},
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_login_with_username_and_password(self, api_client):
+        User.objects.create_user(username="loginuser", phone="09199999999", password="securepass123")
+        url = reverse("accounts:login")
+        response = api_client.post(
+            url,
+            {"username": "loginuser", "password": "securepass123"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert "tokens" in response.data
+        assert "access" in response.data["tokens"]
+        assert response.data["user"]["username"] == "loginuser"
+
+    def test_login_with_phone_and_password(self, api_client, user):
+        url = reverse("accounts:login")
+        response = api_client.post(
+            url,
+            {"phone": user.phone, "password": "testpass123"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert "tokens" in response.data
+        assert "access" in response.data["tokens"]
+
+    def test_login_with_invalid_credentials(self, api_client, user):
+        url = reverse("accounts:login")
+        response = api_client.post(
+            url,
+            {"phone": user.phone, "password": "wrongpassword"},
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
     def test_profile_access_authenticated(self, authenticated_client):
         url = reverse("accounts:profile")
         response = authenticated_client.get(url)
@@ -319,3 +373,100 @@ class TestReviews:
             {"rating": 3, "title": "Changed mind", "comment": "Actually not great"},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+class TestUserProfileAddress:
+    def test_update_profile_address_and_city(self, authenticated_client):
+        url = reverse("accounts:profile")
+        payload = {
+            "first_name": "Ali",
+            "last_name": "Rezaei",
+            "address": "خیابان آزادی پلاک ۱۰",
+            "province": "تهران",
+            "city": "تهران",
+            "postal_code": "1234567890",
+        }
+        response = authenticated_client.put(url, payload)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["province"] == "تهران"
+        assert response.data["city"] == "تهران"
+        assert response.data["postal_code"] == "1234567890"
+
+
+@pytest.mark.django_db
+class TestLocalizationEndpoints:
+    def test_product_localization_parameter(self, api_client, category):
+        product = Product.objects.create(
+            category=category,
+            name="English Knee Brace",
+            name_fa="بریس زانوی فارسی",
+            slug="localized-knee-brace",
+            description="English description",
+            description_fa="توضیحات فارسی",
+            price=50.00,
+            stock=10,
+        )
+        url = reverse("products:product-detail", kwargs={"slug": product.slug})
+
+        # Default / English
+        res_en = api_client.get(f"{url}?lang=en")
+        assert res_en.status_code == status.HTTP_200_OK
+        assert res_en.data["name_localized"] == "English Knee Brace"
+
+        # Persian
+        res_fa = api_client.get(f"{url}?lang=fa")
+        assert res_fa.status_code == status.HTTP_200_OK
+        assert res_fa.data["name_localized"] == "بریس زانوی فارسی"
+        assert res_fa.data["description_localized"] == "توضیحات فارسی"
+
+
+@pytest.mark.django_db
+class TestOrderPayments:
+    def test_payment_initiation_and_verification(self, authenticated_client, user, product):
+        from cart.models import Cart, CartItem
+        from orders.models import Order
+
+        cart = Cart.objects.create(user=user)
+        CartItem.objects.create(cart=cart, product=product, quantity=2)
+
+        # Create order
+        create_url = reverse("orders:order-create")
+        order_res = authenticated_client.post(
+            create_url,
+            {
+                "shipping_address": "Tehran, Azadi St",
+                "shipping_city": "Tehran",
+                "shipping_state": "Tehran",
+                "shipping_zip": "1234567890",
+                "shipping_country": "IR",
+                "shipping_phone": "09121234567",
+            },
+        )
+        assert order_res.status_code == status.HTTP_201_CREATED
+        order_number = order_res.data["order_number"]
+
+        # Initiate payment
+        pay_url = reverse("orders:order-pay-initiate", kwargs={"order_number": order_number})
+        initiate_res = authenticated_client.post(pay_url, {"gateway": "zarinpal"})
+        assert initiate_res.status_code == status.HTTP_200_OK
+        assert "authority" in initiate_res.data
+        authority = initiate_res.data["authority"]
+
+        # Verify payment
+        verify_url = reverse("orders:order-pay-verify")
+        verify_res = authenticated_client.post(
+            verify_url,
+            {
+                "order_number": order_number,
+                "authority": authority,
+                "gateway": "zarinpal",
+            },
+        )
+        assert verify_res.status_code == status.HTTP_200_OK
+        assert verify_res.data["success"] is True
+
+        order = Order.objects.get(order_number=order_number)
+        assert order.payment_status == Order.PAYMENT_STATUS_PAID
+        assert order.status == Order.STATUS_CONFIRMED
+

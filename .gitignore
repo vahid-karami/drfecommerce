@@ -16,3 +16,22 @@ db.sqlite3
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+
+# Production
+staticfiles/
+media/
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Deployment
+deploy/
+Procfile
+gunicorn.conf.py
+nginx/
+
+# IDE
+.idea/
+*.swp
+*.swo

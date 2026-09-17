@@ -46,6 +46,20 @@ export function AuthProvider({ children }) {
     return response.data;
   };
 
+  const loginWithPassword = async (identifier, password) => {
+    const response = await apiClient.post(ENDPOINTS.loginPassword, {
+      username: identifier,
+      phone: identifier,
+      password,
+    });
+    if (response.data.tokens) {
+      localStorage.setItem('tokens', JSON.stringify(response.data.tokens));
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      setUser(response.data.user);
+    }
+    return response.data;
+  };
+
   const resetPassword = async (phone, code, newPassword) => {
     const response = await apiClient.post(ENDPOINTS.resetPassword, {
       phone,
@@ -79,6 +93,7 @@ export function AuthProvider({ children }) {
         sendOTP,
         verifyOTP,
         register,
+        loginWithPassword,
         resetPassword,
         logout,
         updateProfile,

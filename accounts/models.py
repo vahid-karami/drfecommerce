@@ -8,23 +8,30 @@ from django.utils import timezone
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, phone, password=None, **extra_fields):
+    def create_user(self, phone=None, password=None, username=None, **extra_fields):
+        identifier = phone or username or extra_fields.get("username")
+        if not identifier:
+            raise ValueError("Users must have a phone number or username")
         if not phone:
-            raise ValueError("Users must have a phone number")
-        user = self.model(phone=phone, **extra_fields)
+            phone = username
+        if not username:
+            username = phone
+        extra_fields.setdefault("is_verified", True)
+        user = self.model(phone=phone, username=username, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, phone, password=None, **extra_fields):
+    def create_superuser(self, phone=None, password=None, username=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_verified", True)
-        return self.create_user(phone, password, **extra_fields)
+        return self.create_user(phone=phone, password=password, username=username, **extra_fields)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    phone = models.CharField(max_length=15, unique=True)
+    username = models.CharField(max_length=150, unique=True, null=True, blank=True)
+    phone = models.CharField(max_length=50, unique=True, null=True, blank=True)
     email = models.EmailField(blank=True, null=True)
     first_name = models.CharField(max_length=100, blank=True)
     last_name = models.CharField(max_length=100, blank=True)
@@ -33,13 +40,23 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_verified = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
 
+    address = models.TextField(blank=True, verbose_name="Address")
+    province = models.CharField(max_length=100, blank=True, verbose_name="Province")
+    city = models.CharField(max_length=100, blank=True, verbose_name="City")
+    postal_code = models.CharField(max_length=10, blank=True, verbose_name="Postal Code")
+
     objects = UserManager()
 
     USERNAME_FIELD = "phone"
     REQUIRED_FIELDS = []
 
     def __str__(self):
-        return self.phone
+        return self.username or self.phone or str(self.id)
+
+    def get_full_name(self):
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        return self.first_name or self.last_name or self.phone
 
     class Meta:
         db_table = "users"

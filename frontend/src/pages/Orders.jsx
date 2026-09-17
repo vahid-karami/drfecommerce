@@ -1,12 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import apiClient from '../api/client';
 import { ENDPOINTS } from '../api/endpoints';
-
+import { OrderSkeleton } from '../components/Skeletons';
+import { useToast } from '../context/ToastContext';
+import { formatDate } from '../utils/persianDate';
+import Price from '../components/Price';
 
 export default function Orders() {
+  const { t, i18n } = useTranslation();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { success, error: showError } = useToast();
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -35,31 +41,38 @@ export default function Orders() {
   };
 
   const handleCancel = async (orderNumber) => {
-    if (!window.confirm('Are you sure you want to cancel this order?')) return;
+    if (!window.confirm(t('orders.cancelConfirm'))) return;
     try {
       await apiClient.post(ENDPOINTS.orderCancel(orderNumber));
       setOrders(orders.map((o) =>
         o.order_number === orderNumber ? { ...o, status: 'cancelled' } : o
       ));
+      success('Order cancelled successfully');
     } catch (error) {
-      alert('Failed to cancel order');
+      showError(error.response?.data?.error || t('orders.cancelFailed'));
     }
   };
 
   if (loading) {
-    return <div className="loading">Loading orders...</div>;
+    return (
+      <div className="orders-page">
+        <div className="container">
+          <OrderSkeleton />
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="orders-page">
-      <h1>My Orders</h1>
+      <h1>{t('orders.myOrders')}</h1>
 
       {orders.length === 0 ? (
         <div className="empty-orders">
           <span className="empty-icon">📦</span>
-          <h2>No orders yet</h2>
-          <p>Start shopping to see your orders here</p>
-          <Link to="/products" className="btn btn-primary">Browse Products</Link>
+          <h2>{t('orders.noOrders')}</h2>
+          <p>{t('orders.noOrdersDesc')}</p>
+          <Link to="/products" className="btn btn-primary">{t('cart.browseProducts')}</Link>
         </div>
       ) : (
         <div className="orders-list">
@@ -67,9 +80,9 @@ export default function Orders() {
             <div key={order.id} className="order-card">
               <div className="order-header">
                 <div className="order-info">
-                  <span className="order-number">#{order.order_number}</span>
+                  <span className="order-number">{t('orders.orderNumber', { number: order.order_number })}</span>
                   <span className="order-date">
-                    {new Date(order.created_at).toLocaleDateString()}
+                    {t('orders.placedOn', { date: formatDate(order.created_at, i18n.language) })}
                   </span>
                 </div>
                 <span className={`order-status ${getStatusClass(order.status)}`}>
@@ -81,16 +94,16 @@ export default function Orders() {
                 {order.items.map((item, idx) => (
                   <div key={idx} className="order-item">
                     <span>{item.product_name}</span>
-                    <span>Qty: {item.quantity}</span>
-                    <span>${item.subtotal.toFixed(2)}</span>
+                    <span>{t('orders.quantity')}: {item.quantity}</span>
+                    <span><Price amount={item.subtotal} /></span>
                   </div>
                 ))}
               </div>
 
               <div className="order-footer">
                 <div className="order-total">
-                  <span>Total:</span>
-                  <span className="total-amount">${order.total}</span>
+                  <span>{t('cart.total')}:</span>
+                  <span className="total-amount"><Price amount={order.total} /></span>
                 </div>
                 <div className="order-actions">
                   {(order.status === 'pending' || order.status === 'confirmed') && (
@@ -98,7 +111,7 @@ export default function Orders() {
                       onClick={() => handleCancel(order.order_number)}
                       className="btn btn-outline btn-sm"
                     >
-                      Cancel Order
+                      {t('orders.cancelOrder')}
                     </button>
                   )}
                 </div>

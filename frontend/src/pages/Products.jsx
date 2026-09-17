@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import apiClient from '../api/client';
 import { ENDPOINTS } from '../api/endpoints';
 import ProductCard from '../components/ProductCard';
+import { ProductCardSkeleton } from '../components/Skeletons';
+import { usePageMeta } from '../utils/seo';
 
 export default function Products() {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -13,6 +17,11 @@ export default function Products() {
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+
+  usePageMeta({
+    title: t('common.products', 'Products'),
+    description: t('products.allProducts', 'All medical and sports recovery products'),
+  });
 
   const category = searchParams.get('category') || '';
   const injuryType = searchParams.get('injury_type') || '';
@@ -93,28 +102,26 @@ export default function Products() {
   }
   if (minPrice) activeFilters.push({ key: 'min_price', label: `Min $${minPrice}` });
   if (maxPrice) activeFilters.push({ key: 'max_price', label: `Max $${maxPrice}` });
-  if (inStock) activeFilters.push({ key: 'in_stock', label: 'In Stock' });
+  if (inStock) activeFilters.push({ key: 'in_stock', label: t('common.inStock') });
 
   const sortOptions = [
-    { value: '', label: 'Featured' },
-    { value: 'created_at', label: 'Newest' },
-    { value: 'price', label: 'Price: Low to High' },
-    { value: '-price', label: 'Price: High to Low' },
-    { value: 'name', label: 'Name: A-Z' },
+    { value: '', label: t('products.featured') },
+    { value: 'created_at', label: t('products.newest') },
+    { value: 'price', label: t('products.priceLowHigh') },
+    { value: '-price', label: t('products.priceHighLow') },
+    { value: 'name', label: t('products.nameAZ') },
   ];
 
   return (
     <div className="products-page">
       <div className="container">
-        {/* Page Header */}
         <div className="products-header">
           <div>
-            <h1>All Products</h1>
-            <p>{totalCount} products</p>
+            <h1>{t('products.allProducts')}</h1>
+            <p>{t('products.productsCount', { count: totalCount })}</p>
           </div>
         </div>
 
-        {/* Active Filters */}
         {activeFilters.length > 0 && (
           <div className="active-filters">
             {activeFilters.map((filter) => (
@@ -127,18 +134,17 @@ export default function Products() {
               </button>
             ))}
             <button onClick={clearFilters} className="clear-filters">
-              Clear all
+              {t('common.clearAll')}
             </button>
           </div>
         )}
 
-        {/* Mobile Filter Toggle */}
         <div className="mobile-controls">
           <button
             onClick={() => setShowFilters(!showFilters)}
             className="btn btn-outline btn-sm"
           >
-            Filters {activeFilters.length > 0 && `(${activeFilters.length})`}
+            {t('products.filters')} {activeFilters.length > 0 && `(${activeFilters.length})`}
           </button>
           <select
             value={ordering}
@@ -152,20 +158,19 @@ export default function Products() {
         </div>
 
         <div className="products-layout">
-          {/* Filters Sidebar */}
           <aside className={`filters-sidebar ${showFilters ? 'show' : ''}`}>
             <div className="filters-header">
-              <h3>Filters</h3>
+              <h3>{t('products.filters')}</h3>
               <button onClick={() => setShowFilters(false)} className="close-filters">
                 ×
               </button>
             </div>
 
             <div className="filter-group">
-              <label className="filter-label">Search</label>
+              <label className="filter-label">{t('common.search')}</label>
               <input
                 type="text"
-                placeholder="Search products..."
+                placeholder={t('common.search')}
                 value={search}
                 onChange={(e) => updateFilter('search', e.target.value)}
                 className="filter-input"
@@ -173,13 +178,13 @@ export default function Products() {
             </div>
 
             <div className="filter-group">
-              <label className="filter-label">Category</label>
+              <label className="filter-label">{t('products.category')}</label>
               <select
                 value={category}
                 onChange={(e) => updateFilter('category', e.target.value)}
                 className="filter-select"
               >
-                <option value="">All Categories</option>
+                <option value="">{t('products.allCategories')}</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.slug}>
                     {cat.name}
@@ -189,13 +194,13 @@ export default function Products() {
             </div>
 
             <div className="filter-group">
-              <label className="filter-label">Body Part</label>
+              <label className="filter-label">{t('products.bodyPart')}</label>
               <select
                 value={injuryType}
                 onChange={(e) => updateFilter('injury_type', e.target.value)}
                 className="filter-select"
               >
-                <option value="">All Body Parts</option>
+                <option value="">{t('products.allBodyParts')}</option>
                 {Object.entries(injuryTypes).map(([key, label]) => (
                   <option key={key} value={key}>
                     {label}
@@ -205,7 +210,7 @@ export default function Products() {
             </div>
 
             <div className="filter-group">
-              <label className="filter-label">Price Range</label>
+              <label className="filter-label">{t('products.priceRange')}</label>
               <div className="price-inputs">
                 <input
                   type="number"
@@ -232,20 +237,21 @@ export default function Products() {
                   checked={inStock === 'true'}
                   onChange={(e) => updateFilter('in_stock', e.target.checked ? 'true' : '')}
                 />
-                In Stock Only
+                {t('products.inStockOnly')}
               </label>
             </div>
 
             <button onClick={clearFilters} className="btn btn-ghost btn-sm btn-full">
-              Clear All Filters
+              {t('products.clearFilters')}
             </button>
           </aside>
 
-          {/* Products Grid */}
           <div className="products-content">
             {loading ? (
-              <div className="loading">
-                <div className="spinner" />
+              <div className="products-grid">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <ProductCardSkeleton key={i} />
+                ))}
               </div>
             ) : (
               <>
@@ -258,10 +264,10 @@ export default function Products() {
                 {products.length === 0 && (
                   <div className="empty-state">
                     <span className="empty-state-icon">🔍</span>
-                    <h3>No products found</h3>
-                    <p>Try adjusting your filters or search terms</p>
+                    <h3>{t('products.noProductsFound')}</h3>
+                    <p>{t('products.noProductsDesc')}</p>
                     <button onClick={clearFilters} className="btn btn-primary">
-                      Clear Filters
+                      {t('products.clearFilters')}
                     </button>
                   </div>
                 )}
@@ -273,17 +279,17 @@ export default function Products() {
                       onClick={() => setCurrentPage((p) => p - 1)}
                       className="btn btn-outline btn-sm"
                     >
-                      Previous
+                      {t('products.previous')}
                     </button>
                     <span className="page-info">
-                      Page {currentPage} of {totalPages}
+                      {t('products.page', { current: currentPage, total: totalPages })}
                     </span>
                     <button
                       disabled={currentPage === totalPages}
                       onClick={() => setCurrentPage((p) => p + 1)}
                       className="btn btn-outline btn-sm"
                     >
-                      Next
+                      {t('products.next')}
                     </button>
                   </div>
                 )}

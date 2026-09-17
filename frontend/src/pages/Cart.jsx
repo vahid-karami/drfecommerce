@@ -1,11 +1,27 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { CartSkeleton } from '../components/Skeletons';
+import Price from '../components/Price';
 
 export default function Cart() {
-  const { cart, updateCartItem, removeFromCart, clearCart } = useCart();
+  const { t } = useTranslation();
+  const { cart, updateCartItem, removeFromCart, clearCart, loading: cartLoading } = useCart();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { success, error: showError } = useToast();
+
+  const handleRemove = (itemId, productName) => {
+    removeFromCart(itemId);
+    showError(`${productName} removed from cart`);
+  };
+
+  const handleClear = () => {
+    clearCart();
+    success('Cart cleared');
+  };
 
   if (!isAuthenticated) {
     return (
@@ -13,10 +29,20 @@ export default function Cart() {
         <div className="container">
           <div className="empty-state">
             <span className="empty-state-icon">🛒</span>
-            <h3>Your cart is empty</h3>
-            <p>Please login to view your cart</p>
-            <Link to="/login" className="btn btn-primary">Sign In</Link>
+            <h3>{t('cart.emptyCart')}</h3>
+            <p>{t('cart.addToCartFirst')}</p>
+            <Link to="/login" className="btn btn-primary">{t('common.signIn')}</Link>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (cartLoading) {
+    return (
+      <div className="cart-page">
+        <div className="container">
+          <CartSkeleton />
         </div>
       </div>
     );
@@ -28,9 +54,9 @@ export default function Cart() {
         <div className="container">
           <div className="empty-state">
             <span className="empty-state-icon">🛒</span>
-            <h3>Your cart is empty</h3>
-            <p>Add some products to get started</p>
-            <Link to="/products" className="btn btn-primary">Browse Products</Link>
+            <h3>{t('cart.emptyCart')}</h3>
+            <p>{t('cart.emptyCartDesc')}</p>
+            <Link to="/products" className="btn btn-primary">{t('cart.browseProducts')}</Link>
           </div>
         </div>
       </div>
@@ -44,7 +70,7 @@ export default function Cart() {
   return (
     <div className="cart-page">
       <div className="container">
-        <h1>Shopping Cart</h1>
+        <h1>{t('cart.shoppingCart')}</h1>
 
         <div className="cart-layout">
           <div className="cart-items">
@@ -65,7 +91,7 @@ export default function Cart() {
                   {item.product.brand && (
                     <span className="item-brand">{item.product.brand}</span>
                   )}
-                  <p className="item-price">${item.product.effective_price}</p>
+                  <p className="item-price"><Price amount={item.product.effective_price} /></p>
                 </div>
 
                 <div className="item-quantity">
@@ -86,11 +112,11 @@ export default function Cart() {
                 </div>
 
                 <div className="item-subtotal">
-                  <span>${item.subtotal.toFixed(2)}</span>
+                  <span><Price amount={item.subtotal} /></span>
                 </div>
 
                 <button
-                  onClick={() => removeFromCart(item.id)}
+                  onClick={() => handleRemove(item.id, item.product.name)}
                   className="remove-btn"
                   aria-label="Remove item"
                 >
@@ -100,49 +126,49 @@ export default function Cart() {
             ))}
 
             <div className="cart-actions">
-              <button onClick={clearCart} className="btn btn-ghost btn-sm">
-                Clear Cart
+              <button onClick={handleClear} className="btn btn-ghost btn-sm">
+                {t('cart.clearCart')}
               </button>
               <Link to="/products" className="btn btn-outline btn-sm">
-                Continue Shopping
+                {t('common.continueShopping')}
               </Link>
             </div>
           </div>
 
           <div className="cart-summary">
-            <h2>Order Summary</h2>
+            <h2>{t('cart.orderSummary')}</h2>
 
             <div className="summary-row">
-              <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>{t('cart.subtotal')}</span>
+              <span><Price amount={subtotal} /></span>
             </div>
 
             <div className="summary-row">
-              <span>Shipping</span>
-              <span>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+              <span>{t('cart.shipping')}</span>
+              <span>{shipping === 0 ? t('cart.free') : <Price amount={shipping} />}</span>
             </div>
 
             {shipping > 0 && (
               <p className="shipping-note">
-                Add ${(100 - subtotal).toFixed(2)} more for free shipping
+                {t('cart.addMoreForFreeShipping', { amount: Math.max(0, 500000 - subtotal) })}
               </p>
             )}
 
             <div className="summary-row total">
-              <span>Total</span>
-              <span>${total.toFixed(2)}</span>
+              <span>{t('cart.total')}</span>
+              <span><Price amount={total} /></span>
             </div>
 
             <button
               onClick={() => navigate('/checkout')}
               className="btn btn-primary btn-lg btn-full"
             >
-              Proceed to Checkout
+              {t('cart.proceedToCheckout')}
             </button>
 
             <div className="trust-badges">
-              <span>🔒 Secure checkout</span>
-              <span>🚚 Fast delivery</span>
+              <span>🔒 {t('cart.secureCheckout')}</span>
+              <span>🚚 {t('cart.fastDelivery')}</span>
             </div>
           </div>
         </div>

@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import apiClient from '../api/client';
 import { ENDPOINTS } from '../api/endpoints';
-
+import { formatDate } from '../utils/persianDate';
+import Price from '../components/Price';
 
 export default function OrderDetail() {
+  const { t, i18n } = useTranslation();
   const { orderNumber } = useParams();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,22 +18,22 @@ export default function OrderDetail() {
       try {
         const response = await apiClient.get(ENDPOINTS.orderDetail(orderNumber));
         setOrder(response.data);
-      } catch (err) {
-        setError('Order not found');
+      } catch {
+        setError(t('orders.notFound'));
       } finally {
         setLoading(false);
       }
     };
     fetchOrder();
-  }, [orderNumber]);
+  }, [orderNumber, t]);
 
   const handleCancel = async () => {
-    if (!window.confirm('Are you sure you want to cancel this order?')) return;
+    if (!window.confirm(t('orders.cancelConfirm'))) return;
     try {
       await apiClient.post(ENDPOINTS.orderCancel(orderNumber));
       setOrder({ ...order, status: 'cancelled' });
-    } catch (err) {
-      alert('Failed to cancel order');
+    } catch {
+      alert(t('orders.cancelFailed'));
     }
   };
 
@@ -57,15 +60,15 @@ export default function OrderDetail() {
   };
 
   if (loading) {
-    return <div className="loading">Loading order...</div>;
+    return <div className="loading">{t('common.loading')}</div>;
   }
 
   if (error || !order) {
     return (
       <div className="order-detail-page">
         <div className="error-state">
-          <h2>Order not found</h2>
-          <Link to="/orders" className="btn btn-primary">View All Orders</Link>
+          <h2>{t('orders.notFound')}</h2>
+          <Link to="/orders" className="btn btn-primary">{t('orders.viewAll')}</Link>
         </div>
       </div>
     );
@@ -77,9 +80,9 @@ export default function OrderDetail() {
     <div className="order-detail-page">
       <div className="order-header">
         <div>
-          <h1>Order #{order.order_number}</h1>
+          <h1>{t('orders.orderNumber', { number: order.order_number })}</h1>
           <p className="order-date">
-            Placed on {new Date(order.created_at).toLocaleDateString()}
+            {t('orders.placedOn', { date: formatDate(order.created_at, i18n.language) })}
           </p>
         </div>
         <span className={`order-status ${getStatusClass(order.status)}`}>
@@ -105,54 +108,54 @@ export default function OrderDetail() {
 
       <div className="order-content">
         <div className="order-items">
-          <h2>Items</h2>
+          <h2>{t('orders.items')}</h2>
           {order.items.map((item, idx) => (
             <div key={idx} className="order-item">
               <div className="item-details">
                 <h3>{item.product_name}</h3>
-                <p>Quantity: {item.quantity}</p>
+                <p>{t('orders.quantity')}: {item.quantity}</p>
               </div>
-              <span className="item-price">${item.subtotal.toFixed(2)}</span>
+              <span className="item-price"><Price amount={item.subtotal} /></span>
             </div>
           ))}
         </div>
 
         <div className="order-info">
           <div className="info-section">
-            <h2>Shipping Address</h2>
+            <h2>{t('orders.shippingAddress')}</h2>
             <p>{order.shipping_address}</p>
             <p>
               {order.shipping_city}, {order.shipping_state} {order.shipping_zip}
             </p>
             <p>{order.shipping_country}</p>
-            <p>Phone: {order.shipping_phone}</p>
+            <p>{t('auth.phoneNumber')}: {order.shipping_phone}</p>
           </div>
 
           <div className="info-section">
-            <h2>Order Summary</h2>
+            <h2>{t('cart.orderSummary')}</h2>
             <div className="summary-row">
-              <span>Subtotal</span>
-              <span>${order.subtotal}</span>
+              <span>{t('cart.subtotal')}</span>
+              <span><Price amount={order.subtotal} /></span>
             </div>
             <div className="summary-row">
-              <span>Shipping</span>
-              <span>{order.shipping_cost == 0 ? 'Free' : `$${order.shipping_cost}`}</span>
+              <span>{t('cart.shipping')}</span>
+              <span>{order.shipping_cost == 0 ? t('cart.free') : <Price amount={order.shipping_cost} />}</span>
             </div>
             <div className="summary-row total">
-              <span>Total</span>
-              <span>${order.total}</span>
+              <span>{t('cart.total')}</span>
+              <span><Price amount={order.total} /></span>
             </div>
           </div>
 
           {(order.status === 'pending' || order.status === 'confirmed') && (
             <button onClick={handleCancel} className="btn btn-outline">
-              Cancel Order
+              {t('orders.cancelOrder')}
             </button>
           )}
         </div>
       </div>
 
-      <Link to="/orders" className="back-link">← Back to Orders</Link>
+      <Link to="/orders" className="back-link">← {t('orders.backToOrders')}</Link>
     </div>
   );
 }

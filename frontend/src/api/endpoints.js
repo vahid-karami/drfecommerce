@@ -5,6 +5,7 @@ export const ENDPOINTS = {
   verifyOTP: `${API_BASE_URL}/auth/otp/verify/`,
   register: `${API_BASE_URL}/auth/register/`,
   resetPassword: `${API_BASE_URL}/auth/password/reset/`,
+  loginPassword: `${API_BASE_URL}/auth/login/`,
   profile: `${API_BASE_URL}/auth/profile/`,
   tokenRefresh: `${API_BASE_URL}/token/refresh/`,
 
@@ -13,6 +14,10 @@ export const ENDPOINTS = {
   productDetail: (slug) => `${API_BASE_URL}/products/${slug}/`,
   featuredProducts: `${API_BASE_URL}/products/featured/`,
   injuryTypes: `${API_BASE_URL}/products/injury_types/`,
+  
+  adminProducts: `${API_BASE_URL}/products/admin/products/`,
+  adminProductDetail: (slug) => `${API_BASE_URL}/products/admin/products/${slug}/`,
+  adminBulkPriceUpdate: `${API_BASE_URL}/products/admin/products/bulk_price_update/`,
 
   cart: `${API_BASE_URL}/cart/`,
   cartAdd: `${API_BASE_URL}/cart/add/`,
