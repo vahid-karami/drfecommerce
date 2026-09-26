@@ -63,7 +63,7 @@ export default function Cart() {
     );
   }
 
-  const subtotal = cart.total_price;
+  const subtotal = Number(cart.total_price) || 0;
   const shipping = subtotal >= 100 ? 0 : 9.99;
   const total = subtotal + shipping;
 

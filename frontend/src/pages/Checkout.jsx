@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import apiClient from '../api/client';
 import { ENDPOINTS } from '../api/endpoints';
@@ -7,6 +7,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import Price from '../components/Price';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { validateIranianPhone } from '../utils/iranianPhone';
 import {
   IRANIAN_PROVINCES,
@@ -16,7 +17,7 @@ import {
 export default function Checkout() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { cart, clearCart } = useCart();
+  const { cart, loading: cartLoading, refreshCart } = useCart();
   const { user } = useAuth();
   const { success, error: showError } = useToast();
 
@@ -86,9 +87,10 @@ export default function Checkout() {
 
     try {
       const response = await apiClient.post(ENDPOINTS.orderCreate, formData);
-      await clearCart();
       success(t('checkout.orderSuccess', 'Order placed successfully!'));
       navigate(`/orders/${response.data.order_number}`);
+      // The server already emptied the cart; just resync local state.
+      refreshCart();
     } catch (err) {
       const message = err.response?.data?.error || t('checkout.orderFailed');
       setError(message);
@@ -98,13 +100,17 @@ export default function Checkout() {
     }
   };
 
-  const subtotal = cart.total_price;
+  const subtotal = Number(cart.total_price) || 0;
   const shipping = subtotal >= 100 ? 0 : 9.99;
   const total = subtotal + shipping;
 
+  // On a hard reload the cart hasn't been fetched yet; don't bounce to /cart.
+  if (cartLoading || (user && cart.id === undefined)) {
+    return <LoadingSpinner />;
+  }
+
   if (!cart.items || cart.items.length === 0) {
-    navigate('/cart');
-    return null;
+    return <Navigate to="/cart" replace />;
   }
 
   return (
