@@ -1,7 +1,9 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import status, permissions
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
+from rest_framework.throttling import SimpleRateThrottle
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import OTPCode
@@ -17,6 +19,15 @@ from .serializers import (
 User = get_user_model()
 
 
+class OTPRateThrottle(SimpleRateThrottle):
+    """Per-IP limit on OTP endpoints to stop code brute-forcing and SMS flooding."""
+
+    scope = "otp"
+
+    def get_cache_key(self, request, view):
+        return self.cache_format % {"scope": self.scope, "ident": self.get_ident(request)}
+
+
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
     return {
@@ -27,6 +38,7 @@ def get_tokens_for_user(user):
 
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
+@throttle_classes([OTPRateThrottle])
 def send_otp(request):
     serializer = OTPSendSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -55,19 +67,21 @@ def send_otp(request):
 
     otp = OTPCode.objects.create(user=user, otp_type=otp_type)
 
-    return Response(
-        {
-            "message": "OTP sent successfully.",
-            "phone": phone,
-            "otp": otp.code,
-            "expires_in": "5 minutes",
-        },
-        status=status.HTTP_200_OK,
-    )
+    # TODO: deliver the code by SMS. Never return it to the client in production,
+    # otherwise anyone can request a login OTP for any phone and sign in as that user.
+    data = {
+        "message": "OTP sent successfully.",
+        "phone": phone,
+        "expires_in": "5 minutes",
+    }
+    if settings.OTP_RETURN_IN_RESPONSE:
+        data["otp"] = otp.code
+    return Response(data, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
+@throttle_classes([OTPRateThrottle])
 def verify_otp(request):
     serializer = OTPVerifySerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -206,6 +220,7 @@ def register(request):
 
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
+@throttle_classes([OTPRateThrottle])
 def reset_password(request):
     serializer = PasswordResetSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)

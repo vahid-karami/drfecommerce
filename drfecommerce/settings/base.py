@@ -118,7 +118,13 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    "DEFAULT_THROTTLE_RATES": {
+        "otp": os.environ.get("OTP_THROTTLE_RATE", "10/min"),
+    },
 }
+
+# Only expose OTP codes in API responses while developing (no SMS provider yet).
+OTP_RETURN_IN_RESPONSE = os.environ.get("OTP_RETURN_IN_RESPONSE", str(DEBUG)) == "True"
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),

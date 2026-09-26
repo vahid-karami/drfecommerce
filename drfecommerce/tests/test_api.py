@@ -52,14 +52,16 @@ def product(category):
 
 @pytest.mark.django_db
 class TestOTPAuthentication:
-    def test_send_otp_for_registration(self, api_client):
+    def test_send_otp_for_registration(self, api_client, settings):
+        settings.OTP_RETURN_IN_RESPONSE = True
         url = reverse("accounts:otp-send")
         response = api_client.post(url, {"phone": "+1987654321", "otp_type": "register"})
         assert response.status_code == status.HTTP_200_OK
         assert "otp" in response.data
         assert response.data["phone"] == "+1987654321"
 
-    def test_send_otp_for_existing_user_login(self, api_client, user):
+    def test_send_otp_for_existing_user_login(self, api_client, user, settings):
+        settings.OTP_RETURN_IN_RESPONSE = True
         url = reverse("accounts:otp-send")
         response = api_client.post(url, {"phone": user.phone, "otp_type": "login"})
         assert response.status_code == status.HTTP_200_OK

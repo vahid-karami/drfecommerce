@@ -1,4 +1,4 @@
-import random
+import secrets
 from datetime import timedelta
 
 from django.conf import settings
@@ -89,7 +89,7 @@ class OTPCode(models.Model):
 
     @staticmethod
     def generate_code():
-        return str(random.randint(100000, 999999))
+        return f"{secrets.randbelow(1_000_000):06d}"
 
     def is_expired(self):
         return timezone.now() > self.expires_at
