@@ -169,3 +169,38 @@ class TestOrderCreation:
         client.post(reverse("orders:order-cancel", kwargs={"order_number": res.data["order_number"]}))
         product.refresh_from_db()
         assert product.stock == 5
+
+
+@pytest.mark.django_db
+class TestCartQuantityValidation:
+    @pytest.mark.parametrize("quantity", ["abc", -3, 0])
+    def test_add_rejects_invalid_quantity(self, shopper_with_cart, quantity):
+        from cart.models import CartItem
+
+        client, product = shopper_with_cart
+        res = client.post(reverse("cart:cart-add"), {"product_id": product.id, "quantity": quantity}, format="json")
+        assert res.status_code == status.HTTP_400_BAD_REQUEST
+        assert CartItem.objects.get(product=product).quantity == 2
+
+    def test_update_rejects_non_numeric_quantity(self, shopper_with_cart):
+        from cart.models import CartItem
+
+        client, product = shopper_with_cart
+        item = CartItem.objects.get(product=product)
+        res = client.patch(reverse("cart:cart-update"), {"item_id": item.id, "quantity": "x"}, format="json")
+        assert res.status_code == status.HTTP_400_BAD_REQUEST
+
+    @pytest.mark.parametrize(
+        "method,name,payload",
+        [
+            ("post", "cart:cart-add", {"product_id": "abc"}),
+            ("patch", "cart:cart-update", {"item_id": "abc", "quantity": 1}),
+            ("delete", "cart:cart-remove", {"item_id": "abc"}),
+            ("post", "favorites:favorite-add", {"product_id": "abc"}),
+            ("delete", "favorites:favorite-remove", {"product_id": "abc"}),
+        ],
+    )
+    def test_non_numeric_ids_return_404(self, shopper_with_cart, method, name, payload):
+        client, _ = shopper_with_cart
+        res = getattr(client, method)(reverse(name), payload, format="json")
+        assert res.status_code == status.HTTP_404_NOT_FOUND

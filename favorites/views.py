@@ -34,7 +34,7 @@ def favorite_add(request):
 
     try:
         product = Product.objects.get(id=product_id, is_active=True)
-    except Product.DoesNotExist:
+    except (Product.DoesNotExist, ValueError, TypeError):
         return Response(
             {"error": "Product not found."},
             status=status.HTTP_404_NOT_FOUND,
@@ -66,10 +66,13 @@ def favorite_remove(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    deleted, _ = FavoriteItem.objects.filter(
-        favorite_list=favorite_list,
-        product_id=product_id,
-    ).delete()
+    try:
+        deleted, _ = FavoriteItem.objects.filter(
+            favorite_list=favorite_list,
+            product_id=product_id,
+        ).delete()
+    except (ValueError, TypeError):
+        deleted = 0
 
     if not deleted:
         return Response(

@@ -8,6 +8,14 @@ from .models import Cart, CartItem
 from .serializers import CartSerializer
 
 
+def parse_quantity(value):
+    """Return value as an int, or None if it isn't a whole number."""
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+
+
 def get_or_create_cart(user):
     cart, _ = Cart.objects.get_or_create(user=user)
     return cart
@@ -26,7 +34,7 @@ def cart_add_item(request):
     cart = get_or_create_cart(request.user)
 
     product_id = request.data.get("product_id")
-    quantity = int(request.data.get("quantity", 1))
+    quantity = parse_quantity(request.data.get("quantity", 1))
 
     if not product_id:
         return Response(
@@ -34,9 +42,15 @@ def cart_add_item(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+    if quantity is None or quantity < 1:
+        return Response(
+            {"error": "quantity must be a positive integer."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     try:
         product = Product.objects.get(id=product_id, is_active=True)
-    except Product.DoesNotExist:
+    except (Product.DoesNotExist, ValueError, TypeError):
         return Response(
             {"error": "Product not found."},
             status=status.HTTP_404_NOT_FOUND,
@@ -83,13 +97,18 @@ def cart_update_item(request):
 
     try:
         cart_item = CartItem.objects.get(id=item_id, cart=cart)
-    except CartItem.DoesNotExist:
+    except (CartItem.DoesNotExist, ValueError, TypeError):
         return Response(
             {"error": "Cart item not found."},
             status=status.HTTP_404_NOT_FOUND,
         )
 
-    quantity = int(quantity)
+    quantity = parse_quantity(quantity)
+    if quantity is None:
+        return Response(
+            {"error": "quantity must be an integer."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     if quantity <= 0:
         cart_item.delete()
@@ -121,7 +140,7 @@ def cart_remove_item(request):
 
     try:
         cart_item = CartItem.objects.get(id=item_id, cart=cart)
-    except CartItem.DoesNotExist:
+    except (CartItem.DoesNotExist, ValueError, TypeError):
         return Response(
             {"error": "Cart item not found."},
             status=status.HTTP_404_NOT_FOUND,
