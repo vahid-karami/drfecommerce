@@ -204,3 +204,21 @@ class TestCartQuantityValidation:
         client, _ = shopper_with_cart
         res = getattr(client, method)(reverse(name), payload, format="json")
         assert res.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.django_db
+class TestAdminProductCreate:
+    def test_admin_can_create_multiple_products(self):
+        from products.models import Category
+
+        admin = User.objects.create_superuser(phone="09127777777", password="securepass123")
+        cat = Category.objects.create(name="Knee", slug="knee")
+        client = APIClient()
+        client.force_authenticate(admin)
+        url = reverse("products:admin-product-list")
+        slugs = []
+        for name in ["Knee Brace", "Knee Brace", "زانوبند"]:
+            res = client.post(url, {"name": name, "description": "d", "category": cat.id, "price": "10"})
+            assert res.status_code == status.HTTP_201_CREATED, res.data
+            slugs.append(res.data["slug"])
+        assert len(set(slugs)) == 3 and all(slugs)

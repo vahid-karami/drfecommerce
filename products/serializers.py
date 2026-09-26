@@ -182,6 +182,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
+            "id",
+            "slug",
             "name",
             "name_fa",
             "description",
@@ -203,3 +205,5 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             "is_active",
             "is_featured",
         ]
+        # The slug is generated from the name on create and used as the lookup key.
+        read_only_fields = ["id", "slug"]

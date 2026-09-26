@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.text import slugify
 
 
 class Category(models.Model):
@@ -83,6 +84,18 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = self._unique_slug()
+        super().save(*args, **kwargs)
+
+    def _unique_slug(self):
+        base = slugify(self.name)[:40] or "product"
+        slug, n = base, 2
+        while Product.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+            slug, n = f"{base}-{n}", n + 1
+        return slug
 
     def get_name(self, lang='en'):
         if lang == 'fa' and self.name_fa:
