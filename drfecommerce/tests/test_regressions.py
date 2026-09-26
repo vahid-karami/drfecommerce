@@ -277,3 +277,13 @@ class TestBulkPriceUpdate:
         big, small = (p.__class__.objects.get(pk=p.pk) for p in products)
         assert big.price == Decimal("979000")
         assert small.price == Decimal("54.99")
+
+
+@pytest.mark.django_db
+def test_adding_existing_favorite_returns_list(shopper_with_cart):
+    client, product = shopper_with_cart
+    url = reverse("favorites:favorite-add")
+    client.post(url, {"product_id": product.id}, format="json")
+    res = client.post(url, {"product_id": product.id}, format="json")
+    assert res.status_code == status.HTTP_200_OK
+    assert res.data["total_items"] == 1

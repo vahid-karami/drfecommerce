@@ -46,10 +46,9 @@ def favorite_add(request):
     )
 
     if not created:
-        return Response(
-            {"message": "Product already in favorites."},
-            status=status.HTTP_200_OK,
-        )
+        # Same shape as every other favorites response: the client stores it
+        # as the whole favorites list.
+        return Response(FavoriteListSerializer(favorite_list).data, status=status.HTTP_200_OK)
 
     return Response(FavoriteListSerializer(favorite_list).data, status=status.HTTP_201_CREATED)
 
