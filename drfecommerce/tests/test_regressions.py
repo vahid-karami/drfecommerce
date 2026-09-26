@@ -127,3 +127,45 @@ class TestPaymentVerification:
         client.force_authenticate(order.user)
         res = client.post(reverse("orders:order-pay-initiate", kwargs={"order_number": order.order_number}))
         assert res.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.fixture
+def shopper_with_cart(db):
+    from cart.models import Cart, CartItem
+    from products.models import Category, Product
+
+    cat = Category.objects.create(name="Knee", slug="knee")
+    product = Product.objects.create(category=cat, name="Brace", slug="brace", description="d", price=50, stock=5)
+    user = User.objects.create_user(phone="09126666666", password="securepass123")
+    CartItem.objects.create(cart=Cart.objects.create(user=user), product=product, quantity=2)
+    client = APIClient()
+    client.force_authenticate(user)
+    return client, product
+
+
+SHIPPING = {
+    "shipping_address": "Azadi St", "shipping_city": "Tehran",
+    "shipping_zip": "1234567890", "shipping_phone": "09126666666",
+}
+
+
+@pytest.mark.django_db
+class TestOrderCreation:
+    def test_cannot_order_deactivated_product(self, shopper_with_cart):
+        client, product = shopper_with_cart
+        product.is_active = False
+        product.save()
+        res = client.post(reverse("orders:order-create"), SHIPPING)
+        assert res.status_code == status.HTTP_400_BAD_REQUEST
+        product.refresh_from_db()
+        assert product.stock == 5
+
+    def test_create_then_cancel_restores_stock(self, shopper_with_cart):
+        client, product = shopper_with_cart
+        res = client.post(reverse("orders:order-create"), SHIPPING)
+        assert res.status_code == status.HTTP_201_CREATED
+        product.refresh_from_db()
+        assert product.stock == 3
+        client.post(reverse("orders:order-cancel", kwargs={"order_number": res.data["order_number"]}))
+        product.refresh_from_db()
+        assert product.stock == 5

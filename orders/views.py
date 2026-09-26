@@ -2,11 +2,13 @@ import uuid
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import F
 from rest_framework import status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from cart.models import Cart
+from products.models import Product
 
 from .models import Order, OrderItem
 from .serializers import OrderCreateSerializer, OrderSerializer
@@ -44,21 +46,32 @@ def order_create(request):
     serializer.is_valid(raise_exception=True)
 
     try:
-        cart = Cart.objects.prefetch_related("items__product").get(user=request.user)
+        cart = Cart.objects.get(user=request.user)
     except Cart.DoesNotExist:
         return Response(
             {"error": "Your cart is empty."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    cart_items = cart.items.all()
+    cart_items = list(cart.items.select_related("product"))
     if not cart_items:
         return Response(
             {"error": "Your cart is empty."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+    # Lock the product rows so concurrent checkouts can't both pass the stock
+    # check and oversell.
+    products = Product.objects.select_for_update().in_bulk([item.product_id for item in cart_items])
     for item in cart_items:
+        item.product = products[item.product_id]
+
+    for item in cart_items:
+        if not item.product.is_active:
+            return Response(
+                {"error": f"{item.product.name} is no longer available."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if item.quantity > item.product.stock:
             return Response(
                 {
@@ -99,9 +112,10 @@ def order_create(request):
 
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
+@transaction.atomic
 def order_cancel(request, order_number):
     try:
-        order = Order.objects.get(order_number=order_number, user=request.user)
+        order = Order.objects.select_for_update().get(order_number=order_number, user=request.user)
     except Order.DoesNotExist:
         return Response(
             {"error": "Order not found."},
@@ -118,9 +132,8 @@ def order_cancel(request, order_number):
     order.save(update_fields=["status"])
 
     for item in order.items.all():
-        if item.product:
-            item.product.stock += item.quantity
-            item.product.save(update_fields=["stock"])
+        if item.product_id:
+            Product.objects.filter(pk=item.product_id).update(stock=F("stock") + item.quantity)
 
     return Response(OrderSerializer(order).data, status=status.HTTP_200_OK)
 
