@@ -9,20 +9,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: testuser
-          POSTGRES_PASSWORD: testpass
-          POSTGRES_DB: testdb
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
 
     steps:
       - uses: actions/checkout@v4
@@ -40,12 +26,12 @@ jobs:
 
       - name: Run tests
         env:
-          DATABASE_URL: postgres://testuser:testpass@localhost:5432/testdb
           SECRET_KEY: test-secret-key
           DEBUG: "True"
           ALLOWED_HOSTS: "localhost,127.0.0.1"
         run: |
-          python manage.py test
+          python manage.py makemigrations --check --dry-run
+          pytest
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -58,13 +44,17 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Run frontend tests
+        working-directory: frontend
+        run: npx vitest run
+
       - name: Build frontend
         working-directory: frontend
         run: npm run build
 
       - name: Lint frontend
         working-directory: frontend
-        run: npm run lint --if-present || true
+        run: npm run lint --if-present
 
   deploy:
     needs: test
