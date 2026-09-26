@@ -279,7 +279,7 @@ export default function ProductDetail() {
                   <div className="review-header">
                     <div className="review-author">
                       <span className="author-name">
-                        {review.user.first_name || review.user.phone}
+                        {review.user.display_name}
                       </span>
                       {review.is_verified_purchase && (
                         <span className="verified-badge">{t('product.verifiedPurchase')}</span>

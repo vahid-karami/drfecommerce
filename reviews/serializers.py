@@ -1,12 +1,26 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
-
-from accounts.serializers import UserProfileSerializer
 
 from .models import Review
 
 
+class ReviewAuthorSerializer(serializers.ModelSerializer):
+    """Public view of a reviewer: never expose phone, email or address."""
+
+    display_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = get_user_model()
+        fields = ["id", "first_name", "display_name"]
+
+    def get_display_name(self, obj):
+        if obj.first_name:
+            return f"{obj.first_name} {obj.last_name[:1]}".strip()
+        return "Customer"
+
+
 class ReviewSerializer(serializers.ModelSerializer):
-    user = UserProfileSerializer(read_only=True)
+    user = ReviewAuthorSerializer(read_only=True)
 
     class Meta:
         model = Review

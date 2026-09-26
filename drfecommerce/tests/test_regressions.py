@@ -222,3 +222,22 @@ class TestAdminProductCreate:
             assert res.status_code == status.HTTP_201_CREATED, res.data
             slugs.append(res.data["slug"])
         assert len(set(slugs)) == 3 and all(slugs)
+
+
+@pytest.mark.django_db
+def test_public_reviews_do_not_expose_personal_data(api_client):
+    from products.models import Category, Product
+    from reviews.models import Review
+
+    cat = Category.objects.create(name="Knee", slug="knee")
+    product = Product.objects.create(category=cat, name="Brace", slug="brace", description="d", price=50)
+    reviewer = User.objects.create_user(
+        phone="09128888888", password="securepass123", email="a@b.c", first_name="Sara",
+        address="Secret St 1", postal_code="1234567890",
+    )
+    Review.objects.create(user=reviewer, product=product, rating=5, title="t", comment="c")
+    res = api_client.get(reverse("reviews:product-reviews", kwargs={"product_slug": "brace"}))
+    body = str(res.data)
+    for secret in ["09128888888", "a@b.c", "Secret St 1", "1234567890"]:
+        assert secret not in body
+    assert res.data[0]["user"]["first_name"] == "Sara"
