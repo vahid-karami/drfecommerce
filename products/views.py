@@ -1,3 +1,6 @@
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
+
+from django.db import transaction
 from rest_framework import filters, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -139,30 +142,40 @@ class ProductAdminViewSet(viewsets.ModelViewSet):
             return Response({"error": "Percentage is required"}, status=400)
             
         try:
-            percentage = float(percentage)
-        except ValueError:
+            percentage = Decimal(str(percentage))
+        except (InvalidOperation, ValueError, TypeError):
             return Response({"error": "Invalid percentage format"}, status=400)
+
+        if not percentage.is_finite() or percentage <= -100:
+            return Response({"error": "Percentage must be a number greater than -100"}, status=400)
+
+        if category_id:
+            try:
+                category_id = int(category_id)
+            except (ValueError, TypeError):
+                return Response({"error": "Invalid category_id"}, status=400)
 
         queryset = self.get_queryset()
         if category_id:
             queryset = queryset.filter(category_id=category_id)
-            
+
+        factor = 1 + percentage / 100
+
+        def adjust(amount):
+            new_amount = amount * factor
+            # Round to nearest 1000 Toman for clean pricing, but never round a
+            # small price down to zero.
+            rounded = (new_amount / 1000).quantize(Decimal("1"), rounding=ROUND_HALF_UP) * 1000
+            return rounded if rounded > 0 else new_amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
         updated_count = 0
-        for product in queryset:
-            # Calculate new price based on current price
-            if product.price:
-                new_price = float(product.price) * (1 + (percentage / 100))
-                # Round to nearest 1000 Toman for clean pricing
-                new_price = round(new_price / 1000) * 1000
-                product.price = new_price
-                
-            # Optionally calculate new discount price if it exists
-            if product.discount_price:
-                new_discount = float(product.discount_price) * (1 + (percentage / 100))
-                new_discount = round(new_discount / 1000) * 1000
-                product.discount_price = new_discount
-                
-            product.save(update_fields=["price", "discount_price"])
-            updated_count += 1
-            
+        with transaction.atomic():
+            for product in queryset.select_for_update():
+                if product.price:
+                    product.price = adjust(product.price)
+                if product.discount_price:
+                    product.discount_price = adjust(product.discount_price)
+                product.save(update_fields=["price", "discount_price"])
+                updated_count += 1
+
         return Response({"message": f"Successfully updated {updated_count} products", "updated_count": updated_count})

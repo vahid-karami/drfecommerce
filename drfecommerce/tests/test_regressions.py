@@ -241,3 +241,39 @@ def test_public_reviews_do_not_expose_personal_data(api_client):
     for secret in ["09128888888", "a@b.c", "Secret St 1", "1234567890"]:
         assert secret not in body
     assert res.data[0]["user"]["first_name"] == "Sara"
+
+
+@pytest.mark.django_db
+class TestBulkPriceUpdate:
+    @pytest.fixture
+    def admin_client(self):
+        admin = User.objects.create_superuser(phone="09129999999", password="securepass123")
+        client = APIClient()
+        client.force_authenticate(admin)
+        return client
+
+    @pytest.fixture
+    def products(self):
+        from products.models import Category, Product
+
+        cat = Category.objects.create(name="Knee", slug="knee")
+        return [
+            Product.objects.create(category=cat, name="A", slug="a", description="d", price=890000),
+            Product.objects.create(category=cat, name="B", slug="b", description="d", price="49.99"),
+        ]
+
+    url = "/api/products/admin/products/bulk_price_update/"
+
+    @pytest.mark.parametrize("percentage", [-100, -150, "nan", [1], {"a": 1}])
+    def test_rejects_invalid_percentage(self, admin_client, products, percentage):
+        res = admin_client.post(self.url, {"percentage": percentage}, format="json")
+        assert res.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_rounds_without_zeroing_small_prices(self, admin_client, products):
+        from decimal import Decimal
+
+        res = admin_client.post(self.url, {"percentage": 10}, format="json")
+        assert res.status_code == status.HTTP_200_OK
+        big, small = (p.__class__.objects.get(pk=p.pk) for p in products)
+        assert big.price == Decimal("979000")
+        assert small.price == Decimal("54.99")

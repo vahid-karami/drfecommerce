@@ -57,7 +57,9 @@ export default function AdminPriceDeclaration() {
     if (isNaN(val)) return currentPrice;
     
     const newPrice = parseFloat(currentPrice) * (1 + (val / 100));
-    return Math.round(newPrice / 1000) * 1000;
+    const rounded = Math.round(newPrice / 1000) * 1000;
+    // Mirrors the backend: small prices are not rounded down to zero.
+    return rounded > 0 ? rounded : Math.round(newPrice * 100) / 100;
   };
 
   const handleSubmit = async () => {
