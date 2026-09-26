@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import Price from '../../components/Price';
 
 export default function AdminProducts() {
+  const { addToast: showToast } = useToast();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,8 +42,8 @@ export default function AdminProducts() {
         apiClient.get(ENDPOINTS.adminProducts),
         apiClient.get(ENDPOINTS.categories),
       ]);
-      setProducts(productsRes.data);
-      setCategories(categoriesRes.data);
+      setProducts(productsRes.data.results || productsRes.data);
+      setCategories(categoriesRes.data.results || categoriesRes.data);
     } catch {
       setError('Failed to fetch data');
     } finally {
@@ -86,7 +87,11 @@ export default function AdminProducts() {
       resetForm();
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to save product');
+      const data = err.response?.data;
+      const fieldErrors = data && typeof data === 'object' && !data.error
+        ? Object.entries(data).map(([field, msgs]) => `${field}: ${[].concat(msgs).join(' ')}`).join('; ')
+        : '';
+      setError(data?.error || fieldErrors || 'Failed to save product');
     } finally {
       setSubmitting(false);
     }
@@ -99,7 +104,7 @@ export default function AdminProducts() {
       name_fa: product.name_fa || '',
       description: product.description || '',
       description_fa: product.description_fa || '',
-      category: product.category?.id || '',
+      category: product.category?.id ?? product.category ?? '',
       price: product.price?.toString() || '',
       price_irr: product.price_irr?.toString() || '',
       cost: product.cost?.toString() || '',

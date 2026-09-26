@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import apiClient from '../../api/client';
+import { ENDPOINTS } from '../../api/endpoints';
 import { useToast } from '../../context/ToastContext';
 
 export default function AdminCategories() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { showToast } = useToast();
+  const { addToast: showToast } = useToast();
 
   useEffect(() => {
     fetchCategories();
@@ -13,8 +14,8 @@ export default function AdminCategories() {
 
   const fetchCategories = async () => {
     try {
-      const res = await apiClient.get('/products/categories/');
-      setCategories(res.data);
+      const res = await apiClient.get(ENDPOINTS.categories);
+      setCategories(res.data.results || res.data);
     } catch (err) {
       showToast('Failed to load categories', 'error');
     } finally {

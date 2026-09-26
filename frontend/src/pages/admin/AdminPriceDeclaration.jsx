@@ -10,7 +10,7 @@ export default function AdminPriceDeclaration() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [percentage, setPercentage] = useState('');
   const [loading, setLoading] = useState(false);
-  const { showToast } = useToast();
+  const { addToast: showToast } = useToast();
 
   useEffect(() => {
     fetchCategories();
@@ -19,7 +19,7 @@ export default function AdminPriceDeclaration() {
   const fetchCategories = async () => {
     try {
       const res = await apiClient.get(ENDPOINTS.categories);
-      setCategories(res.data);
+      setCategories(res.data.results || res.data);
     } catch (err) {
       showToast('Failed to load categories', 'error');
     }

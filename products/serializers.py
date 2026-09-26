@@ -136,8 +136,10 @@ class ProductAdminSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "name",
+            "name_fa",
             "slug",
             "description",
+            "description_fa",
             "category",
             "category_name",
             "price",
