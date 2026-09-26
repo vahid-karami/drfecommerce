@@ -46,22 +46,27 @@ def send_otp(request):
     phone = serializer.validated_data["phone"]
     otp_type = serializer.validated_data["otp_type"]
 
-    if otp_type == OTPCode.OTP_TYPE_REGISTER and User.objects.filter(phone=phone).exists():
+    # A user without a usable password is a placeholder created by an unfinished
+    # OTP registration, not a real account.
+    user = User.objects.filter(phone=phone).first()
+    is_registered = user is not None and user.has_usable_password()
+
+    if otp_type == OTPCode.OTP_TYPE_REGISTER and is_registered:
         return Response(
             {"error": "A user with this phone number already exists."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    if otp_type == OTPCode.OTP_TYPE_LOGIN:
-        try:
-            User.objects.get(phone=phone)
-        except User.DoesNotExist:
-            return Response(
-                {"error": "No user found with this phone number."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+    if otp_type in (OTPCode.OTP_TYPE_LOGIN, OTPCode.OTP_TYPE_RESET_PASSWORD) and not is_registered:
+        return Response(
+            {"error": "No user found with this phone number."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
 
-    user, _ = User.objects.get_or_create(phone=phone, defaults={"is_verified": False})
+    if user is None:
+        user = User(phone=phone, is_verified=False)
+        user.set_unusable_password()
+        user.save()
 
     OTPCode.objects.filter(user=user, otp_type=otp_type, is_used=False).update(is_used=True)
 
@@ -173,6 +178,12 @@ def register(request):
     if existing_user and existing_user.has_usable_password():
         return Response(
             {"error": "User already registered. Please login."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if existing_user and not existing_user.is_verified:
+        return Response(
+            {"error": "Please verify your phone number before registering."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
