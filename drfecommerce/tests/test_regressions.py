@@ -75,3 +75,55 @@ class TestOTPRegistrationFlow:
         res = api_client.post(reverse("accounts:otp-send"), {"phone": "09124444444", "otp_type": "reset_password"})
         assert res.status_code == status.HTTP_404_NOT_FOUND
         assert not User.objects.filter(phone="09124444444").exists()
+
+
+@pytest.fixture
+def order(db):
+    from orders.models import Order
+
+    owner = User.objects.create_user(phone="09125555555", password="securepass123")
+    return Order.objects.create(
+        user=owner, order_number="ORD-TEST0001", shipping_address="x", shipping_city="Tehran",
+        shipping_zip="1234567890", shipping_phone="09125555555", subtotal=100, total=100,
+    )
+
+
+@pytest.mark.django_db
+class TestPaymentVerification:
+    def test_forged_mock_authority_does_not_mark_order_paid(self, api_client, order):
+        from orders.models import Order
+
+        res = api_client.post(
+            reverse("orders:order-pay-verify"),
+            {"order_number": order.order_number, "authority": "ZP-MOCK-forged", "gateway": "zarinpal"},
+        )
+        order.refresh_from_db()
+        assert res.status_code == status.HTTP_400_BAD_REQUEST
+        assert order.payment_status != Order.PAYMENT_STATUS_PAID
+
+    def test_idpay_verification_does_not_crash(self, order):
+        from orders.models import Order
+
+        client = APIClient()
+        client.force_authenticate(order.user)
+        init = client.post(
+            reverse("orders:order-pay-initiate", kwargs={"order_number": order.order_number}), {"gateway": "idpay"}
+        )
+        assert init.status_code == status.HTTP_200_OK
+        res = APIClient().post(
+            reverse("orders:order-pay-verify"),
+            {"order_number": order.order_number, "id": init.data["id"], "gateway": "idpay"},
+        )
+        assert res.status_code == status.HTTP_200_OK, res.data
+        order.refresh_from_db()
+        assert order.payment_status == Order.PAYMENT_STATUS_PAID
+
+    def test_cannot_pay_cancelled_order(self, order):
+        from orders.models import Order
+
+        order.status = Order.STATUS_CANCELLED
+        order.save()
+        client = APIClient()
+        client.force_authenticate(order.user)
+        res = client.post(reverse("orders:order-pay-initiate", kwargs={"order_number": order.order_number}))
+        assert res.status_code == status.HTTP_400_BAD_REQUEST

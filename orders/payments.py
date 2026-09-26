@@ -5,11 +5,27 @@ from decimal import Decimal
 import urllib.request
 import urllib.error
 
+from django.conf import settings
+
 logger = logging.getLogger(__name__)
 
 
 class PaymentGatewayError(Exception):
     pass
+
+
+def toman_amount(order):
+    """Order total in Tomans. Totals below 10,000 are treated as USD."""
+    if order.total < 10000:
+        return int(order.total * Decimal("60000"))
+    return int(order.total / 10)
+
+
+def rial_amount(order):
+    """Order total in Rials. Totals below 10,000 are treated as USD."""
+    if order.total < 10000:
+        return int(order.total * Decimal("600000"))
+    return int(order.total)
 
 
 class ZarinPalGateway:
@@ -38,7 +54,7 @@ class ZarinPalGateway:
         Initiate payment request and return gateway redirect URL and authority code.
         Amount for Zarinpal is in Tomans.
         """
-        amount_toman = int(order.total * Decimal("60000")) if order.total < 10000 else int(order.total / 10)
+        amount_toman = toman_amount(order)
         desc = description or f"Payment for Order {order.order_number}"
 
         payload = {
@@ -69,6 +85,9 @@ class ZarinPalGateway:
                     }
                 raise PaymentGatewayError(f"ZarinPal request failed with status code {status_code}")
         except Exception as e:
+            if not self.sandbox:
+                logger.error(f"ZarinPal request failed: {e}")
+                raise PaymentGatewayError(str(e)) from e
             logger.warning(f"ZarinPal online request failed: {e}. Generating local sandbox authority.")
             authority = f"ZP-MOCK-{uuid.uuid4().hex[:12]}"
             return {
@@ -79,8 +98,8 @@ class ZarinPalGateway:
                 "is_mock": True,
             }
 
-    def verify_payment(self, authority, amount=0):
-        if authority.startswith("ZP-MOCK-"):
+    def verify_payment(self, order, authority):
+        if self.sandbox and authority.startswith("ZP-MOCK-"):
             return {
                 "success": True,
                 "ref_id": f"REF-{uuid.uuid4().hex[:8].upper()}",
@@ -91,7 +110,8 @@ class ZarinPalGateway:
         payload = {
             "MerchantID": self.merchant_id,
             "Authority": authority,
-            "Amount": int(amount),
+            # Must match the amount sent in request_payment or ZarinPal rejects it.
+            "Amount": toman_amount(order),
         }
 
         try:
@@ -136,7 +156,7 @@ class IDPayGateway:
         return headers
 
     def request_payment(self, order, callback_url, description=None):
-        amount_irr = int(order.total * Decimal("600000")) if order.total < 10000 else int(order.total)
+        amount_irr = rial_amount(order)
         desc = description or f"Payment for Order {order.order_number}"
 
         payload = {
@@ -166,6 +186,9 @@ class IDPayGateway:
                     }
                 raise PaymentGatewayError(result.get("error_message", "IDPay request failed"))
         except Exception as e:
+            if not self.sandbox:
+                logger.error(f"IDPay request failed: {e}")
+                raise PaymentGatewayError(str(e)) from e
             logger.warning(f"IDPay online request failed: {e}. Generating local sandbox transaction.")
             track_id = f"IDP-MOCK-{uuid.uuid4().hex[:12]}"
             return {
@@ -176,8 +199,8 @@ class IDPayGateway:
                 "is_mock": True,
             }
 
-    def verify_payment(self, payment_id, order_id):
-        if str(payment_id).startswith("IDP-MOCK-"):
+    def verify_payment(self, order, payment_id):
+        if self.sandbox and str(payment_id).startswith("IDP-MOCK-"):
             return {
                 "success": True,
                 "track_id": f"TRACK-{uuid.uuid4().hex[:8].upper()}",
@@ -187,7 +210,7 @@ class IDPayGateway:
 
         payload = {
             "id": payment_id,
-            "order_id": order_id,
+            "order_id": order.order_number,
         }
 
         try:
@@ -213,7 +236,9 @@ class IDPayGateway:
             return {"success": False, "error": str(e)}
 
 
-def get_payment_gateway(gateway_name="zarinpal", sandbox=True):
+def get_payment_gateway(gateway_name="zarinpal", sandbox=None):
+    if sandbox is None:
+        sandbox = getattr(settings, "PAYMENT_SANDBOX", True)
     gateways = {
         "zarinpal": ZarinPalGateway(sandbox=sandbox),
         "idpay": IDPayGateway(sandbox=sandbox),

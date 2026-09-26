@@ -136,16 +136,33 @@ def order_pay_initiate(request, order_number):
     if order.payment_status == Order.PAYMENT_STATUS_PAID:
         return Response({"error": "This order is already paid."}, status=status.HTTP_400_BAD_REQUEST)
 
-    gateway_name = request.data.get("gateway", "zarinpal")
+    if order.status == Order.STATUS_CANCELLED:
+        return Response({"error": "This order has been cancelled."}, status=status.HTTP_400_BAD_REQUEST)
+
+    gateway_name = str(request.data.get("gateway", "zarinpal")).lower()
+    if gateway_name not in ("zarinpal", "idpay"):
+        return Response({"error": "Unsupported payment gateway."}, status=status.HTTP_400_BAD_REQUEST)
     callback_url = request.data.get(
         "callback_url",
         request.build_absolute_uri(f"/api/orders/payment/verify/?order_number={order.order_number}&gateway={gateway_name}"),
     )
 
-    from .payments import get_payment_gateway
+    from .payments import PaymentGatewayError, get_payment_gateway
 
     gateway = get_payment_gateway(gateway_name)
-    payment_data = gateway.request_payment(order, callback_url)
+    try:
+        payment_data = gateway.request_payment(order, callback_url)
+    except PaymentGatewayError:
+        return Response(
+            {"error": "Payment gateway is unavailable. Please try again later."},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    # Remember which transaction belongs to this order so the (public) verify
+    # endpoint can't be fed an arbitrary authority.
+    order.payment_gateway = gateway_name
+    order.payment_authority = payment_data.get("authority") or payment_data.get("id") or ""
+    order.save(update_fields=["payment_gateway", "payment_authority"])
 
     return Response(
         {
@@ -159,11 +176,11 @@ def order_pay_initiate(request, order_number):
 
 @api_view(["POST", "GET"])
 @permission_classes([permissions.AllowAny])
+@transaction.atomic
 def order_pay_verify(request):
     data = request.data if request.method == "POST" else request.query_params
     order_number = data.get("order_number")
     authority = data.get("Authority") or data.get("authority") or data.get("id")
-    gateway_name = data.get("gateway", "zarinpal")
 
     if not order_number or not authority:
         return Response(
@@ -172,7 +189,7 @@ def order_pay_verify(request):
         )
 
     try:
-        order = Order.objects.get(order_number=order_number)
+        order = Order.objects.select_for_update().get(order_number=order_number)
     except Order.DoesNotExist:
         return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -182,11 +199,22 @@ def order_pay_verify(request):
             status=status.HTTP_200_OK,
         )
 
+    if not order.payment_authority or str(authority) != order.payment_authority:
+        return Response(
+            {"success": False, "error": "Payment authority does not match this order."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if order.status == Order.STATUS_CANCELLED:
+        return Response(
+            {"success": False, "error": "This order has been cancelled."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     from .payments import get_payment_gateway
 
-    gateway = get_payment_gateway(gateway_name)
-    amount = order.total
-    verification = gateway.verify_payment(authority, amount=amount)
+    gateway = get_payment_gateway(order.payment_gateway)
+    verification = gateway.verify_payment(order, authority)
 
     if verification.get("success"):
         order.payment_status = Order.PAYMENT_STATUS_PAID

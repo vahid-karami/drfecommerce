@@ -124,6 +124,9 @@ REST_FRAMEWORK = {
 }
 
 # Only expose OTP codes in API responses while developing (no SMS provider yet).
+# Sandbox mode enables the offline mock gateway fallback. Disable in production.
+PAYMENT_SANDBOX = os.environ.get("PAYMENT_SANDBOX", str(DEBUG)) == "True"
+
 OTP_RETURN_IN_RESPONSE = os.environ.get("OTP_RETURN_IN_RESPONSE", str(DEBUG)) == "True"
 
 SIMPLE_JWT = {
