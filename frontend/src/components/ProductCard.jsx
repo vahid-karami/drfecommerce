@@ -1,29 +1,30 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useFavorites } from '../context/FavoritesContext';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import ProductQuickView from './ProductQuickView';
 import Price from './Price';
+import Icon from './Icon';
+import { bodyPartLabel } from '../utils/bodyParts';
 
 export default function ProductCard({ product }) {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language === 'fa' ? 'fa' : 'en';
   const { isAuthenticated } = useAuth();
   const { toggleFavorite, isInFavorites } = useFavorites();
   const navigate = useNavigate();
   const [showQuickView, setShowQuickView] = useState(false);
-  const hasDiscount = product.discount_price && product.discount_price < product.price;
+
+  const price = Number(product.price);
+  const effective = Number(product.effective_price);
+  const hasDiscount = product.discount_price && effective < price;
+  const discountPercent = hasDiscount ? Math.round(((price - effective) / price) * 100) : 0;
   const isFavorite = isInFavorites(product.id);
+  const name = (lang === 'fa' && product.name_fa) || product.name_localized || product.name;
+  const url = `/products/${product.slug}`;
 
-  // Calculate percentage discount
-  const calculateDiscountPercent = () => {
-    if (!hasDiscount) return 0;
-    const diff = product.price - product.effective_price;
-    return Math.round((diff / product.price) * 100);
-  };
-
-  const handleFavoriteClick = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleFavoriteClick = async () => {
     if (!isAuthenticated) {
       navigate('/login');
       return;
@@ -32,88 +33,53 @@ export default function ProductCard({ product }) {
   };
 
   return (
-    <Link to={`/products/${product.slug}`} className="product-card digikala-card">
-      <div className="product-card-image digikala-card-img">
-        {product.primary_image ? (
-          <img src={product.primary_image.image} alt={product.name} loading="lazy" />
-        ) : (
-          <div className="product-card-placeholder">
-            <span>🏥</span>
-          </div>
-        )}
-        
-        {/* Discount Badge on Image */}
-        {hasDiscount && (
-          <span className="digikala-discount-badge">
-            ٪ {calculateDiscountPercent()}
-          </span>
-        )}
+    <>
+      <article className={`product-card ${product.in_stock ? '' : 'is-out'}`}>
+        <div className="product-card-media">
+          <Link to={url} className="product-card-img" tabIndex={-1} aria-hidden="true">
+            {product.primary_image ? (
+              <img src={product.primary_image.image} alt="" loading="lazy" />
+            ) : (
+              <span className="img-fallback"><Icon name="box" size={40} strokeWidth={1.2} /></span>
+            )}
+          </Link>
 
-        {/* Action Buttons overlay (Hover) */}
-        <div className="card-hover-actions">
+          <div className="product-card-badges">
+            {hasDiscount && <span className="badge-sale">{t('product.discountBadge', '{{percent}}٪ تخفیف', { percent: discountPercent })}</span>}
+            {product.is_featured && <span className="badge-soft">{t('product.bestseller', 'پرفروش')}</span>}
+          </div>
+
           <button
+            type="button"
             onClick={handleFavoriteClick}
-            className={`action-icon-btn ${isFavorite ? 'text-danger' : ''}`}
-            aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-            title={isFavorite ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'}
+            className={`fav-btn ${isFavorite ? 'on' : ''}`}
+            aria-pressed={isFavorite}
+            aria-label={isFavorite ? t('product.removeFavorite', 'حذف از علاقه‌مندی‌ها') : t('product.addFavorite', 'افزودن به علاقه‌مندی‌ها')}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill={isFavorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
+            <Icon name="heart" size={20} filled={isFavorite} />
           </button>
-          
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setShowQuickView(true);
-            }}
-            className="action-icon-btn"
-            aria-label="Quick view"
-            title="مشاهده سریع"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
+
+          <button type="button" className="quick-view-btn" onClick={() => setShowQuickView(true)}>
+            {t('product.quickView', 'مشاهده سریع')}
           </button>
         </div>
-      </div>
 
-      <div className="product-card-content digikala-card-content">
-        <h3 className="product-card-name clamped-title">{product.name}</h3>
-        
-        <div className="card-middle-row">
-          <div className="product-rating">
-            <span className="star-icon">⭐</span>
-            <span className="rating-text">۴.۵</span>
-          </div>
-          {product.brand && <span className="product-card-brand">{product.brand}</span>}
-        </div>
-
-        <div className="product-card-price digikala-price-layout">
-          {hasDiscount ? (
-            <div className="price-row">
-              <span className="price-original"><Price amount={product.price} showCurrency={false} /></span>
-              <span className="price-sale"><Price amount={product.effective_price} /></span>
-            </div>
-          ) : (
-            <div className="price-row">
-               <span className="price-sale"><Price amount={product.effective_price} /></span>
-            </div>
+        <div className="product-card-body">
+          {product.injury_type && product.injury_type !== 'general' && (
+            <span className="product-card-meta">{bodyPartLabel(product.injury_type, lang)}</span>
           )}
-        </div>
-        
-        {!product.in_stock && (
-          <div className="out-of-stock-overlay">
-            <span>ناموجود</span>
+          <h3 className="product-card-title">
+            <Link to={url}>{name}</Link>
+          </h3>
+          <div className="product-card-price">
+            <span className="price-now"><Price amount={effective} /></span>
+            {hasDiscount && <span className="price-was"><Price amount={price} showSymbol={false} /></span>}
           </div>
-        )}
-      </div>
+          {!product.in_stock && <span className="stock-note">{t('common.outOfStock')}</span>}
+        </div>
+      </article>
 
-      {showQuickView && (
-        <ProductQuickView slug={product.slug} onClose={() => setShowQuickView(false)} />
-      )}
-    </Link>
+      {showQuickView && <ProductQuickView slug={product.slug} onClose={() => setShowQuickView(false)} />}
+    </>
   );
 }

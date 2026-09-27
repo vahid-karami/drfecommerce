@@ -5,40 +5,8 @@
   text-align: right;
 }
 
-[dir="rtl"] .header-content {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .header-nav {
-  flex-direction: row-reverse;
-}
-
 [dir="rtl"] .header-actions {
   flex-direction: row-reverse;
-}
-
-[dir="rtl"] .logo-mark {
-  margin-left: var(--spacing-2);
-  margin-right: 0;
-}
-
-[dir="rtl"] .dropdown-menu {
-  left: auto;
-  right: 0;
-}
-
-[dir="rtl"] .hero-content {
-  text-align: right;
-}
-
-[dir="rtl"] .hero-actions {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .body-parts-grid,
-[dir="rtl"] .sports-grid,
-[dir="rtl"] .goals-grid {
-  direction: rtl;
 }
 
 [dir="rtl"] .products-layout {
@@ -170,10 +138,6 @@
   flex-direction: row-reverse;
 }
 
-[dir="rtl"] .trust-grid {
-  direction: rtl;
-}
-
 [dir="rtl"] .guides-grid {
   direction: rtl;
 }
@@ -221,9 +185,7 @@
 
 /* Mobile RTL */
 @media (max-width: 768px) {
-  [dir="rtl"] .mobile-nav {
-    text-align: right;
-  }
+  
 
   [dir="rtl"] .products-grid {
     direction: rtl;
@@ -231,5 +193,4 @@
 
   [dir="rtl"] .cart-item {
     flex-wrap: wrap;
-  }
-}
+  }}

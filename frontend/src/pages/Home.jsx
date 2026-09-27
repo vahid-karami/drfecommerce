@@ -1,159 +1,254 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import apiClient from '../api/client';
 import { ENDPOINTS } from '../api/endpoints';
 import ProductCard from '../components/ProductCard';
+import { ProductCardSkeleton } from '../components/Skeletons';
+import HeroCarousel from '../components/HeroCarousel';
+import CardRail from '../components/CardRail';
+import Icon from '../components/Icon';
+import { BODY_PARTS } from '../utils/bodyParts';
+import { usePageMeta } from '../utils/seo';
+
+const imageOf = (product) => product?.primary_image?.image;
 
 export default function Home() {
-  const { t } = useTranslation();
-  const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [discountedProducts, setDiscountedProducts] = useState([]);
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language === 'fa' ? 'fa' : 'en';
+  const [products, setProducts] = useState([]);
+  const [featured, setFeatured] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const [featuredRes, allRes] = await Promise.all([
-          apiClient.get(ENDPOINTS.products, { params: { is_featured: 'true' } }),
-          apiClient.get(ENDPOINTS.products)
-        ]);
-        setFeaturedProducts(featuredRes.data.results.slice(0, 4));
-        
-        // Find discounted products for Incredible Offers
-        const discounted = allRes.data.results
-          .filter(p => p.discount_price !== null)
-          .slice(0, 6);
-        setDiscountedProducts(discounted.length > 0 ? discounted : allRes.data.results.slice(0, 6));
-        
-        setLoading(false);
-      } catch (error) {
-        console.error('Failed to fetch home products:', error);
-        setLoading(false);
-      }
-    };
+  usePageMeta({
+    title: t('home.metaTitle', 'ساپورت‌ها و بریس‌های ورزشی و طبی'),
+    description: t('home.metaDescription', 'زانوبند، قوزک‌بند، کمربند طبی و پوشاک فشاری برای پیشگیری، درمان و عملکرد بهتر.'),
+  });
 
-    fetchProducts();
+  useEffect(() => {
+    Promise.all([
+      apiClient.get(ENDPOINTS.products),
+      apiClient.get(ENDPOINTS.featuredProducts),
+      apiClient.get(ENDPOINTS.categories),
+    ])
+      .then(([allRes, featuredRes, categoriesRes]) => {
+        setProducts(allRes.data.results || allRes.data);
+        setFeatured(featuredRes.data.results || featuredRes.data);
+        setCategories(categoriesRes.data.results || categoriesRes.data);
+      })
+      .catch((error) => console.error('Failed to load home page data:', error))
+      .finally(() => setLoading(false));
   }, []);
 
-  const circleCategories = [
-    { id: 'knee', name: 'زانوبند', icon: '🦵', query: 'knee' },
-    { id: 'ankle', name: 'مچ‌بند پا', icon: '🦶', query: 'ankle' },
-    { id: 'back', name: 'کمربند طبی', icon: '🧘', query: 'back' },
-    { id: 'shoulder', name: 'شانه و گردن', icon: '💪', query: 'shoulder' },
-    { id: 'wrist', name: 'مچ‌بند دست', icon: '✋', query: 'wrist' },
-    { id: 'compression', name: 'پوشاک فشاری', icon: '🎽', query: 'general' },
-  ];
+  // First product image per body part / category, used as the tile photo.
+  const byInjury = useMemo(() => {
+    const map = {};
+    products.forEach((p) => {
+      if (!map[p.injury_type] && imageOf(p)) map[p.injury_type] = p;
+    });
+    return map;
+  }, [products]);
 
-  if (loading) {
-    return (
-      <div className="loading">
-        <div className="spinner" />
-      </div>
-    );
-  }
+  const byCategoryName = useMemo(() => {
+    const map = {};
+    products.forEach((p) => {
+      if (!map[p.category_name] && imageOf(p)) map[p.category_name] = p;
+    });
+    return map;
+  }, [products]);
+
+  const bodyPartTiles = BODY_PARTS.filter((p) => byInjury[p.key]).map((p) => ({
+    key: p.key,
+    to: `/products?injury_type=${p.key}`,
+    title: lang === 'fa' ? p.fa : p.en,
+    subtitle: lang === 'fa' ? p.blurbFa : p.blurbEn,
+    image: imageOf(byInjury[p.key]),
+  }));
+
+  const categoryTiles = categories.map((c) => ({
+    key: c.slug,
+    to: `/products?category=${c.slug}`,
+    title: (lang === 'fa' && c.name_fa) || c.name,
+    subtitle: t('products.productsCount', { count: c.product_count }),
+    image: c.image || imageOf(byCategoryName[c.name]),
+  }));
+
+  const onSale = products.find((p) => p.discount_price && Number(p.effective_price) < Number(p.price));
+
+  const slides = [
+    {
+      key: 'knee',
+      eyebrow: t('home.slide1Eyebrow', 'حمایت هدفمند از زانو'),
+      title: t('home.slide1Title', 'با خیال راحت به میدان برگرد'),
+      text: t('home.slide1Text', 'زانوبندها و اسلیوهای فشاری ما با پشتیبانی دقیق از مفصل، درد را کم می‌کنند و ثبات را به حرکت برمی‌گردانند.'),
+      cta: t('home.slide1Cta', 'خرید زانوبند'),
+      to: '/products?injury_type=knee',
+      image: imageOf(byInjury.knee),
+    },
+    {
+      key: 'back',
+      eyebrow: t('home.slide2Eyebrow', 'سلامت ستون فقرات'),
+      title: t('home.slide2Title', 'کمردرد را جدی بگیرید'),
+      text: t('home.slide2Text', 'ساپورت‌های کمری با فشار یکنواخت، عضلات را آرام می‌کنند و در کار روزانه و ورزش همراه شما هستند.'),
+      cta: t('home.slide2Cta', 'مشاهده ساپورت‌های کمر'),
+      to: '/products?injury_type=back',
+      image: imageOf(byInjury.back),
+    },
+    onSale && {
+      key: 'sale',
+      eyebrow: t('home.slide3Eyebrow', 'پیشنهاد ویژه'),
+      title: t('home.slide3Title', 'تخفیف‌های این هفته'),
+      text: t('home.slide3Text', 'منتخبی از پرفروش‌ترین ساپورت‌ها با قیمت ویژه، فقط برای مدت محدود.'),
+      cta: t('home.seeOffers', 'مشاهده پیشنهادها'),
+      to: '/products?on_sale=true',
+      image: imageOf(onSale),
+    },
+  ].filter((s) => s && s.image);
+
+  const guides = [
+    {
+      key: 'knee',
+      title: t('home.guideKneeTitle', 'راهنمای زانودرد'),
+      text: t('home.guideKneeText', 'علت‌ها، علائم و ساپورت مناسب برای هر مرحله.'),
+      to: '/products?injury_type=knee',
+      image: imageOf(byInjury.knee),
+    },
+    {
+      key: 'back',
+      title: t('home.guideBackTitle', 'رهایی از کمردرد'),
+      text: t('home.guideBackText', 'پشتیبانی از ستون فقرات در کار، رانندگی و ورزش.'),
+      to: '/products?injury_type=back',
+      image: imageOf(byInjury.back),
+    },
+    {
+      key: 'ankle',
+      title: t('home.guideAnkleTitle', 'پیچ‌خوردگی مچ پا'),
+      text: t('home.guideAnkleText', 'از ثابت‌سازی اولیه تا بازگشت کامل به تمرین.'),
+      to: '/products?injury_type=ankle',
+      image: imageOf(byInjury.ankle),
+    },
+  ].filter((g) => g.image);
+
+  const topSellers = (featured.length ? featured : products).slice(0, 4);
 
   return (
-    <div className="home digikala-home">
-      {/* Hero Banner Slider */}
-      <section className="hero digikala-hero" style={{
-        background: `linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.7) 100%), url('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1920&h=800&fit=crop') center/cover`,
-      }}>
+    <div className="home">
+      <section className="home-hero">
         <div className="container">
-          <div className="hero-content text-center">
-            <span className="hero-badge badge-ruby">تجهیزات تخصصی آسیب‌های ورزشی</span>
-            <h1 className="hero-title">بازگشت قدرتمند به ورزش</h1>
-            <p className="hero-subtitle">انواع ساپورت‌های ارتوپدی و ورزشی با استانداردهای پزشکی</p>
-            <div className="hero-actions justify-center">
-              <Link to="/products" className="btn btn-primary btn-lg">مشاهده محصولات</Link>
+          {loading ? <div className="hero-skeleton" /> : <HeroCarousel slides={slides} />}
+        </div>
+      </section>
+
+      {bodyPartTiles.length > 0 && (
+        <section className="band band-sky">
+          <div className="container">
+            <CardRail
+              eyebrow={t('home.findYourProduct', 'محصول مناسب خود را پیدا کنید')}
+              title={t('home.shopByBodyPart')}
+              cta={{ to: '/products', label: t('home.viewAllBodyParts', 'مشاهده همه') }}
+              items={bodyPartTiles}
+              variant="solid"
+            />
+          </div>
+        </section>
+      )}
+
+      {categoryTiles.length > 0 && (
+        <section className="band">
+          <div className="container">
+            <CardRail
+              eyebrow={t('home.findYourProduct', 'محصول مناسب خود را پیدا کنید')}
+              title={t('home.shopByType', 'خرید بر اساس نوع محصول')}
+              cta={{ to: '/categories', label: t('home.viewAllCategories', 'همه دسته‌ها') }}
+              items={categoryTiles}
+              variant="soft"
+            />
+          </div>
+        </section>
+      )}
+
+      {guides.length > 0 && (
+        <section className="band band-sky">
+          <div className="container rail-layout">
+            <div className="rail-intro">
+              <span className="eyebrow">{t('home.discover', 'بیشتر بدانید')}</span>
+              <h2 className="section-title">{t('home.howWeHelp', 'اسپورت‌مد چگونه کمک می‌کند')}</h2>
+              <p className="rail-desc">
+                {t('home.howWeHelpText', 'از درد مزمن مفاصل تا آسیب‌های ورزشی؛ راه‌هایی را ببینید که به شما کمک می‌کنند فعال بمانید.')}
+              </p>
+            </div>
+            <div className="guide-grid">
+              {guides.map((g) => (
+                <Link key={g.key} to={g.to} className="guide-card">
+                  <div className="guide-card-img"><img src={g.image} alt="" loading="lazy" /></div>
+                  <div className="guide-card-body">
+                    <h3>{g.title}</h3>
+                    <p>{g.text}</p>
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* Circle Category Icons */}
-      <section className="section py-8">
+      <section className="band">
         <div className="container">
-          <div className="category-circle-grid">
-            {circleCategories.map((cat) => (
-              <Link key={cat.id} to={`/products?injury_type=${cat.query}`} className="category-circle-item">
-                <div className="circle-icon">{cat.icon}</div>
-                <span className="circle-label">{cat.name}</span>
-              </Link>
-            ))}
+          <div className="section-head-center">
+            <h2 className="section-title">{t('home.topSellers', 'پرفروش‌ترین‌ها')}</h2>
+            <Link to="/products" className="link-arrow">
+              {t('home.viewAllProducts', 'همه محصولات')} <Icon name="arrowLeft" size={16} />
+            </Link>
+          </div>
+          <div className="product-grid">
+            {loading
+              ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)
+              : topSellers.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
         </div>
       </section>
 
-      {/* Incredible Offers Section (پیشنهاد شگفت‌انگیز) */}
-      <section className="incredible-offers-section">
+      <section className="band band-tight">
         <div className="container">
-          <div className="incredible-offers-container">
-            <div className="incredible-offers-header">
-              <div className="offers-title-block">
-                <h2>پیشنهاد</h2>
-                <h2>شگفت‌انگیز</h2>
+          <div className="advice-banner">
+            <div>
+              <span className="eyebrow">{t('home.adviceEyebrow', 'مشاوره رایگان')}</span>
+              <h2>{t('home.adviceTitle', 'در انتخاب سایز یا مدل مردد هستید؟')}</h2>
+              <p>{t('home.adviceText', 'کارشناسان ما کمک می‌کنند ساپورتی را انتخاب کنید که دقیقاً به نیاز شما پاسخ می‌دهد.')}</p>
+            </div>
+            <a href="tel:+982112345678" className="btn btn-secondary btn-lg">
+              <Icon name="phone" size={18} /> {t('home.adviceCta', 'تماس با کارشناس')}
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section className="trust-bar">
+        <div className="container trust-grid">
+          {[
+            { icon: 'truck', title: t('home.trustShipTitle', 'ارسال سریع'), text: t('home.trustShipText', 'ارسال رایگان به سراسر کشور') },
+            { icon: 'card', title: t('home.trustPayTitle', 'پرداخت امن'), text: t('home.trustPayText', 'درگاه زرین‌پال و آیدی‌پی') },
+            { icon: 'returns', title: t('home.trustReturnTitle', 'بازگشت آسان'), text: t('home.trustReturnText', '۷ روز ضمانت بازگشت کالا') },
+            { icon: 'headset', title: t('home.trustSupportTitle', 'پشتیبانی تخصصی'), text: t('home.trustSupportText', 'مشاوره پیش و پس از خرید') },
+          ].map((item) => (
+            <div key={item.icon} className="trust-item">
+              <Icon name={item.icon} size={28} strokeWidth={1.6} />
+              <div>
+                <strong>{item.title}</strong>
+                <span>{item.text}</span>
               </div>
-              <Link to="/products?discount=true" className="view-all-offers">مشاهده همه {'>'}</Link>
             </div>
-            
-            <div className="incredible-offers-carousel">
-              {discountedProducts.map((product) => (
-                <div key={product.id} className="offer-card-wrapper">
-                  <ProductCard product={product} />
-                </div>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* Trust Service Highlights Bar */}
-      <section className="section py-8 border-y border-neutral-200 bg-white">
-        <div className="container">
-          <div className="trust-grid digikala-trust-grid">
-            <div className="trust-item">
-              <span className="trust-icon">🚀</span>
-              <h3>ارسال اکسپرس و سریع</h3>
-            </div>
-            <div className="trust-item">
-              <span className="trust-icon">🛡️</span>
-              <h3>ضمانت ۱۰۰٪ اصالت کالا</h3>
-            </div>
-            <div className="trust-item">
-              <span className="trust-icon">🩺</span>
-              <h3>مشاوره تخصصی پزشکی ورزشی</h3>
-            </div>
-            <div className="trust-item">
-              <span className="trust-icon">🔄</span>
-              <h3>۷ روز ضمانت تعویض و بازگشت</h3>
-            </div>
-            <div className="trust-item">
-              <span className="trust-icon">💳</span>
-              <h3>پرداخت امن بانکی</h3>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Products */}
-      <section className="section section-alt">
-        <div className="container">
-          <div className="section-header">
-            <h2>پرفروش‌ترین‌ها</h2>
-            <Link to="/products" className="section-link">{t('common.viewAll')}</Link>
-          </div>
-          {featuredProducts.length > 0 ? (
-            <div className="products-grid">
-              {featuredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          ) : (
-            <div className="empty-state">
-              <p>{t('common.noProducts')}</p>
-            </div>
-          )}
+      <section className="band seo-block">
+        <div className="container narrow">
+          <h2 className="section-title">{t('home.aboutTitle', 'اسپورت‌مد')}</h2>
+          <p>
+            {t('home.aboutText', 'ساپورت‌ها و پوشاک فشاری اسپورت‌مد با پارچه‌های تنفس‌پذیر و فشار هدفمند، گردش خون را بهبود می‌دهند و به ثبات مفصل کمک می‌کنند؛ نتیجه، درد کمتر، ریکاوری سریع‌تر و اعتماد به نفس بیشتر در حرکت است. برای شروع، عضو بدن یا نوع محصول مورد نظرتان را انتخاب کنید.')}
+          </p>
         </div>
       </section>
     </div>

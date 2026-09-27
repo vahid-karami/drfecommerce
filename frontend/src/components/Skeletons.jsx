@@ -9,14 +9,12 @@ export function Skeleton({ className = '', style = {} }) {
 
 export function ProductCardSkeleton() {
   return (
-    <div className="card product-card">
-      <div className="product-image">
-        <Skeleton style={{ width: '100%', height: '100%' }} />
-      </div>
-      <div className="card-body">
-        <Skeleton style={{ width: '60%', height: '1rem', marginBottom: '0.5rem' }} />
-        <Skeleton style={{ width: '40%', height: '0.875rem', marginBottom: '1rem' }} />
-        <Skeleton style={{ width: '30%', height: '1.5rem' }} />
+    <div className="product-card" aria-hidden="true">
+      <Skeleton className="product-card-media" style={{ aspectRatio: '1' }} />
+      <div className="product-card-body">
+        <Skeleton style={{ width: '35%', height: '0.75rem' }} />
+        <Skeleton style={{ width: '85%', height: '1rem' }} />
+        <Skeleton style={{ width: '45%', height: '1.1rem', marginTop: '0.25rem' }} />
       </div>
     </div>
   );

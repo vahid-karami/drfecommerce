@@ -13,7 +13,7 @@ export function usePageMeta(options = {}) {
   } = options;
 
   useEffect(() => {
-    const baseTitle = 'SportMed Shop - Sports Injury Recovery';
+    const baseTitle = i18n.language === 'fa' ? 'اسپورت‌مد' : 'SportMed';
     const pageTitle = title ? `${title} | ${baseTitle}` : baseTitle;
     const pageDescription = description || 'Sports recovery and support products designed to help you stay active, recover confidently, and perform at your best.';
 

@@ -1,6 +1,8 @@
 @import './styles/design-tokens.css';
 @import './styles/main.css';
 @import './styles/rtl.css';
+@import './styles/storefront.css';
+@import './styles/catalog.css';
 
 /* App Layout */
 .app {
