@@ -22,20 +22,16 @@ export function ProductCardSkeleton() {
 
 export function ProductDetailSkeleton() {
   return (
-    <div className="product-detail-page">
-      <div className="container">
-        <Skeleton style={{ width: '200px', height: '1rem', marginBottom: '2rem' }} />
-        <div className="product-main">
-          <div className="product-gallery">
-            <Skeleton style={{ width: '100%', height: '500px' }} />
-          </div>
-          <div className="product-info">
-            <Skeleton style={{ width: '40%', height: '1rem', marginBottom: '1rem' }} />
-            <Skeleton style={{ width: '80%', height: '2rem', marginBottom: '1rem' }} />
-            <Skeleton style={{ width: '30%', height: '1.5rem', marginBottom: '2rem' }} />
-            <Skeleton style={{ width: '100%', height: '100px', marginBottom: '2rem' }} />
-            <Skeleton style={{ width: '200px', height: '3rem' }} />
-          </div>
+    <div className="pdp" aria-hidden="true">
+      <Skeleton style={{ width: '220px', height: '0.8rem', margin: '1.5rem 0 1.25rem' }} />
+      <div className="pdp-main">
+        <Skeleton className="pdp-stage" />
+        <div className="pdp-info">
+          <Skeleton style={{ width: '25%', height: '0.9rem', marginBottom: '1rem' }} />
+          <Skeleton style={{ width: '80%', height: '2.2rem', marginBottom: '1rem' }} />
+          <Skeleton style={{ width: '35%', height: '1rem', marginBottom: '2rem' }} />
+          <Skeleton style={{ width: '100%', height: '120px', marginBottom: '2rem' }} />
+          <Skeleton style={{ width: '100%', height: '52px', borderRadius: '999px' }} />
         </div>
       </div>
     </div>

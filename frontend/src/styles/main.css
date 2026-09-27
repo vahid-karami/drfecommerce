@@ -578,116 +578,6 @@ html {
   border-color: var(--color-primary);
 }
 
-.quick-view-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-8);
-}
-
-.quick-view-image {
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  background: var(--color-neutral-100);
-}
-
-.quick-view-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.quick-view-info {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-4);
-}
-
-.quick-view-info .product-brand {
-  font-size: var(--font-size-sm);
-  color: var(--color-neutral-500);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.quick-view-info h3 {
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-neutral-900);
-  margin: 0;
-}
-
-.quick-view-info .product-description {
-  color: var(--color-neutral-600);
-  line-height: var(--line-height-relaxed);
-  font-size: var(--font-size-sm);
-}
-
-.quick-view-info .product-price {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-primary);
-}
-
-.quick-view-info .price-original {
-  font-size: var(--font-size-lg);
-  color: var(--color-neutral-400);
-  text-decoration: line-through;
-  font-weight: var(--font-weight-normal);
-}
-
-.quick-view-info .stock-status {
-  font-size: var(--font-size-sm);
-}
-
-.quick-view-info .purchase-section {
-  display: flex;
-  gap: var(--spacing-4);
-  align-items: center;
-  margin-top: var(--spacing-2);
-}
-
-.quick-view-info .quantity-selector {
-  display: flex;
-  align-items: center;
-  border: 2px solid var(--color-neutral-200);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.quick-view-info .qty-btn {
-  background: none;
-  border: none;
-  padding: var(--spacing-3) var(--spacing-4);
-  font-size: var(--font-size-lg);
-  cursor: pointer;
-  color: var(--color-neutral-600);
-  transition: all var(--transition-fast);
-}
-
-.quick-view-info .qty-btn:hover {
-  background: var(--color-neutral-100);
-  color: var(--color-neutral-900);
-}
-
-.quick-view-info .qty-value {
-  padding: 0 var(--spacing-4);
-  font-weight: var(--font-weight-semibold);
-  min-width: 40px;
-  text-align: center;
-}
-
-@media (max-width: 768px) {
-  .quick-view-content {
-    grid-template-columns: 1fr;
-  }
-
-  .quick-view-image {
-    height: 250px;
-  }}
-
 /* MOBILE RESPONSIVENESS */
 @media (max-width: 768px) {
   
@@ -706,19 +596,11 @@ html {
 
   
 
-  .product-main {
-    flex-direction: column;
-  }
+  
 
-  .product-gallery {
-    margin-right: 0;
-    margin-bottom: var(--spacing-6);
-  }
+  
 
-  .purchase-section {
-    flex-direction: column;
-    align-items: stretch;
-  }
+  
 
   .cart-layout {
     flex-direction: column;
@@ -957,25 +839,6 @@ html {
 
 .text-danger {
   color: #ef4056 !important;
-}
-
-.product-rating {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  color: var(--color-neutral-600);
-}
-
-.price-original {
-  color: var(--color-neutral-400);
-  text-decoration: line-through;
-  font-size: var(--font-size-xs);
-}
-
-.price-sale {
-  color: var(--color-neutral-900);
-  font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-base);
 }
 
 /* DIGIKALA FOOTER STYLES */

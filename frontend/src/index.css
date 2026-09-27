@@ -4,6 +4,7 @@
 @import './styles/storefront.css';
 @import './styles/catalog.css';
 @import './styles/pages.css';
+@import './styles/product.css';
 
 /* App Layout */
 .app {

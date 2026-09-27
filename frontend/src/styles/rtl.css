@@ -9,19 +9,6 @@
   flex-direction: row-reverse;
 }
 
-[dir="rtl"] .product-main {
-  direction: rtl;
-}
-
-[dir="rtl"] .product-gallery {
-  margin-left: var(--spacing-12);
-  margin-right: 0;
-}
-
-[dir="rtl"] .purchase-section {
-  flex-direction: row-reverse;
-}
-
 [dir="rtl"] .cart-layout {
   direction: rtl;
 }
@@ -97,26 +84,6 @@
   transform: scaleX(-1);
 }
 
-[dir="rtl"] .breadcrumb {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .size-options {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .quantity-selector {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .spec-item {
-  text-align: right;
-}
-
-[dir="rtl"] .review-header {
-  flex-direction: row-reverse;
-}
-
 [dir="rtl"] .guides-grid {
   direction: rtl;
 }
@@ -150,9 +117,7 @@
 }
 
 /* Persian Number Formatting */
-[dir="rtl"] .price,
-[dir="rtl"] .price-sale,
-[dir="rtl"] .price-original {
+[dir="rtl"] .price {
   direction: ltr;
   display: inline-block;
 }

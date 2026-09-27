@@ -1,59 +1,102 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import apiClient from '../api/client';
 import { ENDPOINTS } from '../api/endpoints';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useFavorites } from '../context/FavoritesContext';
 import { useToast } from '../context/ToastContext';
 import { ProductDetailSkeleton } from '../components/Skeletons';
 import { usePageMeta, ProductSchema } from '../utils/seo';
 import Price from '../components/Price';
+import Icon from '../components/Icon';
+import Breadcrumbs from '../components/Breadcrumbs';
+import ProductCard from '../components/ProductCard';
+import { bodyPartLabel } from '../utils/bodyParts';
+import { toPersianNumber } from '../hooks/useLanguage';
+import { formatDate } from '../utils/persianDate';
+
+function Stars({ value, size = 16 }) {
+  return (
+    <span className="stars" aria-hidden="true">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Icon key={i} name="star" size={size} filled={i <= Math.round(value)} strokeWidth={1.4} />
+      ))}
+    </span>
+  );
+}
+
+function Accordion({ id, title, open, onToggle, children }) {
+  return (
+    <section className={`accordion ${open ? 'open' : ''}`} id={id}>
+      <h2>
+        <button type="button" aria-expanded={open} aria-controls={`${id}-panel`} onClick={onToggle}>
+          {title}
+          <Icon name="chevronDown" size={20} />
+        </button>
+      </h2>
+      <div className="accordion-panel" id={`${id}-panel`} hidden={!open}>
+        {children}
+      </div>
+    </section>
+  );
+}
 
 export default function ProductDetail() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language === 'fa' ? 'fa' : 'en';
+  const num = (n) => (lang === 'fa' ? toPersianNumber(n) : String(n));
   const { slug } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const { toggleFavorite, isInFavorites } = useFavorites();
   const { success, error: showError } = useToast();
 
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [related, setRelated] = useState([]);
   const [quantity, setQuantity] = useState(1);
-  const [selectedSize, setSelectedSize] = useState('');
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
-
-  usePageMeta({
-    title: product ? (product.name_localized || product.name) : '',
-    description: product ? (product.description_localized || product.description) : '',
-    image: product?.images?.[0]?.image,
-  });
+  const [openSection, setOpenSection] = useState({ about: true, specs: false, reviews: false });
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [reviewForm, setReviewForm] = useState({ rating: 5, title: '', comment: '' });
   const [submittingReview, setSubmittingReview] = useState(false);
 
+  const name = product ? (lang === 'fa' && product.name_fa) || product.name_localized || product.name : '';
+  const description = product
+    ? (lang === 'fa' && product.description_fa) || product.description_localized || product.description
+    : '';
+
+  usePageMeta({ title: name, description, image: product?.images?.[0]?.image });
+
   useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const [productRes, reviewsRes] = await Promise.all([
-          apiClient.get(ENDPOINTS.productDetail(slug)),
-          apiClient.get(ENDPOINTS.productReviews(slug)),
-        ]);
+    let cancelled = false;
+    setLoading(true);
+    setActiveImage(0);
+    setQuantity(1);
+    Promise.all([apiClient.get(ENDPOINTS.productDetail(slug)), apiClient.get(ENDPOINTS.productReviews(slug))])
+      .then(([productRes, reviewsRes]) => {
+        if (cancelled) return;
         setProduct(productRes.data);
         setReviews(reviewsRes.data);
-        if (productRes.data.size) {
-          setSelectedSize(productRes.data.size);
-        }
-      } catch (error) {
-        console.error('Failed to fetch product:', error);
-      } finally {
-        setLoading(false);
-      }
+        return apiClient.get(ENDPOINTS.products, { params: { injury_type: productRes.data.injury_type } });
+      })
+      .then((relatedRes) => {
+        if (cancelled || !relatedRes) return;
+        const items = (relatedRes.data.results || relatedRes.data).filter((p) => p.slug !== slug);
+        setRelated(items.slice(0, 4));
+      })
+      .catch((error) => {
+        if (!cancelled) console.error('Failed to fetch product:', error);
+      })
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
     };
-    fetchProduct();
   }, [slug]);
 
   const handleAddToCart = async () => {
@@ -65,11 +108,19 @@ export default function ProductDetail() {
     try {
       await addToCart(product.id, quantity);
       success(t('cart.addedToCart'));
-    } catch {
-      showError(t('cart.addFailed'));
+    } catch (err) {
+      showError(err.response?.data?.error || t('cart.addFailed'));
     } finally {
       setAddingToCart(false);
     }
+  };
+
+  const handleFavorite = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    await toggleFavorite(product.id);
   };
 
   const handleSubmitReview = async (e) => {
@@ -80,7 +131,7 @@ export default function ProductDetail() {
       const reviewsRes = await apiClient.get(ENDPOINTS.productReviews(slug));
       setReviews(reviewsRes.data);
       setReviewForm({ rating: 5, title: '', comment: '' });
-      success('Review submitted successfully');
+      success(t('product.reviewSubmitted', 'نظر شما ثبت شد.'));
     } catch (error) {
       showError(error.response?.data?.error || t('product.reviewFailed'));
     } finally {
@@ -88,271 +139,355 @@ export default function ProductDetail() {
     }
   };
 
+  const openReviews = () => {
+    setOpenSection((s) => ({ ...s, reviews: true }));
+    requestAnimationFrame(() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  };
+
   if (loading) {
     return (
-      <div className="product-detail-page">
-        <div className="container">
-          <ProductDetailSkeleton />
-        </div>
+      <div className="container">
+        <ProductDetailSkeleton />
       </div>
     );
   }
 
   if (!product) {
     return (
-      <div className="error-state">
-        <h2>{t('product.notFound')}</h2>
-        <Link to="/products" className="btn btn-primary">{t('cart.browseProducts')}</Link>
+      <div className="container">
+        <div className="empty-panel">
+          <Icon name="box" size={40} strokeWidth={1.4} />
+          <h2>{t('product.notFound')}</h2>
+          <Link to="/products" className="btn btn-primary">{t('cart.browseProducts')}</Link>
+        </div>
       </div>
     );
   }
 
-  const hasDiscount = product.discount_price && product.discount_price < product.price;
-  const avgRating = reviews.length > 0
-    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
-    : null;
+  const images = product.images || [];
+  const price = Number(product.price);
+  const effective = Number(product.effective_price);
+  const hasDiscount = product.discount_price && effective < price;
+  const discountPercent = hasDiscount ? Math.round(((price - effective) / price) * 100) : 0;
+  const avgRating = reviews.length ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
+  const isFavorite = isInFavorites(product.id);
+  const alreadyReviewed = user && reviews.some((r) => r.user?.id === user.id);
+  const categoryName = (lang === 'fa' && product.category?.name_fa) || product.category?.name;
+
+  const specs = [
+    { label: t('product.category'), value: categoryName },
+    { label: t('products.bodyPart'), value: product.injury_type ? bodyPartLabel(product.injury_type, lang) : '' },
+    { label: t('product.brand', 'برند'), value: product.brand },
+    { label: t('product.size'), value: product.size },
+    { label: t('product.color'), value: product.color },
+    { label: t('product.material'), value: product.material },
+    { label: t('product.weight'), value: product.weight ? `${num(Number(product.weight))} ${t('product.grams', 'گرم')}` : '' },
+    { label: t('product.sku', 'کد محصول'), value: num(String(product.id).padStart(6, '0')) },
+  ].filter((s) => s.value);
+
+  const highlights = [
+    product.material && t('product.highlightMaterial', 'جنس: {{material}}', { material: product.material }),
+    product.size && t('product.highlightSize', 'سایز موجود: {{size}}', { size: product.size }),
+    t('product.highlightShipping', 'ارسال رایگان و ۷ روز ضمانت بازگشت'),
+  ].filter(Boolean);
+
+  const crumbs = [
+    { to: '/', label: t('common.home') },
+    { to: '/products', label: t('common.shop') },
+    product.injury_type && product.injury_type !== 'general'
+      ? { to: `/products?injury_type=${product.injury_type}`, label: bodyPartLabel(product.injury_type, lang) }
+      : null,
+    { label: name },
+  ].filter(Boolean);
 
   return (
-    <div className="product-detail-page">
+    <div className="pdp">
       <ProductSchema product={product} />
       <div className="container">
-        <nav className="breadcrumb">
-          <Link to="/">{t('common.home')}</Link>
-          <span>/</span>
-          <Link to="/products">{t('common.products')}</Link>
-          <span>/</span>
-          <span>{product.name_localized || product.name}</span>
-        </nav>
+        <Breadcrumbs items={crumbs} />
 
-        <div className="product-main">
-          <div className="product-gallery">
-            <div className="main-image">
-              {product.images && product.images.length > 0 ? (
-                <img
-                  src={product.images[activeImage]?.image || product.images[0].image}
-                  alt={product.name_localized || product.name}
-                />
-              ) : (
-                <div className="image-placeholder">🏥</div>
-              )}
-            </div>
-            {product.images && product.images.length > 1 && (
-              <div className="thumbnail-list">
-                {product.images.map((img, idx) => (
+        <div className="pdp-main">
+          <div className="pdp-gallery">
+            {images.length > 1 && (
+              <div className="pdp-thumbs" role="tablist" aria-label={t('product.images', 'تصاویر محصول')}>
+                {images.map((img, idx) => (
                   <button
                     key={img.id}
+                    role="tab"
+                    aria-selected={idx === activeImage}
                     onClick={() => setActiveImage(idx)}
-                    className={`thumbnail ${idx === activeImage ? 'active' : ''}`}
+                    className={idx === activeImage ? 'active' : ''}
                   >
-                    <img src={img.image} alt={img.alt_text || product.name} />
+                    <img src={img.image} alt="" />
                   </button>
                 ))}
               </div>
             )}
-          </div>
-
-          <div className="product-info">
-            {product.brand && (
-              <span className="product-brand">{product.brand}</span>
-            )}
-            <h1>{product.name_localized || product.name}</h1>
-
-            {avgRating && (
-              <div className="product-rating">
-                <span className="stars">{'★'.repeat(Math.round(avgRating))}{'☆'.repeat(5 - Math.round(avgRating))}</span>
-                <span>{avgRating}</span>
-                <span className="review-count">({t('product.reviewsCount', { count: reviews.length })})</span>
-              </div>
-            )}
-
-            <div className="product-price">
-              {hasDiscount ? (
-                <>
-                  <span className="price-original"><Price amount={product.price} /></span>
-                  <span className="price-sale"><Price amount={product.effective_price} /></span>
-                  <span className="discount-badge">
-                    {t('product.savePercent', { percent: Math.round((1 - product.discount_price / product.price) * 100) })}
-                  </span>
-                </>
+            <div className="pdp-stage">
+              {images.length ? (
+                <img src={images[activeImage]?.image || images[0].image} alt={images[activeImage]?.alt_text || name} />
               ) : (
-                <Price amount={product.effective_price} />
+                <Icon name="box" size={64} strokeWidth={1.2} />
+              )}
+              {hasDiscount && (
+                <span className="badge-sale pdp-badge">{t('product.discountBadge', '{{percent}}٪ تخفیف', { percent: num(discountPercent) })}</span>
+              )}
+              {images.length > 1 && (
+                <>
+                  <button className="stage-arrow prev" onClick={() => setActiveImage((i) => (i - 1 + images.length) % images.length)} aria-label={t('home.prevSlide', 'قبلی')}>
+                    <Icon name="chevronRight" className="flip-ltr" />
+                  </button>
+                  <button className="stage-arrow next" onClick={() => setActiveImage((i) => (i + 1) % images.length)} aria-label={t('home.nextSlide', 'بعدی')}>
+                    <Icon name="chevronLeft" className="flip-ltr" />
+                  </button>
+                </>
               )}
             </div>
+          </div>
 
-            <p className="product-short-desc">{product.description_localized || product.description}</p>
+          <div className="pdp-info">
+            {product.brand && <span className="eyebrow">{product.brand}</span>}
+            <h1 className="pdp-title">{name}</h1>
 
-            {product.size && (
-              <div className="option-group">
-                <label className="option-label">{t('product.size')}</label>
-                <div className="size-options">
+            <button type="button" className="pdp-rating" onClick={openReviews}>
+              <Stars value={avgRating} />
+              <span>
+                {reviews.length
+                  ? t('product.ratingSummary', '{{rating}} از ۵ · {{count}} نظر', { rating: num(avgRating.toFixed(1)), count: num(reviews.length) })
+                  : t('product.beFirstReview', 'اولین نظر را ثبت کنید')}
+              </span>
+            </button>
+
+            <p className="pdp-lead">{description}</p>
+
+            <ul className="pdp-highlights">
+              {highlights.map((h) => (
+                <li key={h}><Icon name="checkCircle" size={20} /> {h}</li>
+              ))}
+            </ul>
+
+            <div className="pdp-buybox">
+              <div className="pdp-price">
+                <span className="price-now"><Price amount={effective} /></span>
+                {hasDiscount && <span className="price-was"><Price amount={price} showSymbol={false} /></span>}
+              </div>
+
+              <span className={`stock-pill ${product.in_stock ? 'ok' : 'out'}`}>
+                <span className="dot" />
+                {product.in_stock ? t('product.available', 'موجود') : t('common.outOfStock')}
+              </span>
+
+              {product.size && (
+                <div className="pdp-option">
+                  <div className="pdp-option-head">
+                    <span>{t('product.size')}</span>
+                    <button type="button" className="text-btn" onClick={() => setShowSizeGuide(true)}>
+                      <Icon name="ruler" size={16} /> {t('product.sizeGuide')}
+                    </button>
+                  </div>
+                  <div className="size-chips">
+                    <span className="chip active">{product.size}</span>
+                  </div>
+                </div>
+              )}
+
+              {product.in_stock && (
+                <div className="pdp-actions">
+                  <div className="qty" role="group" aria-label={t('cart.quantity', 'تعداد')}>
+                    <button onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))} aria-label={t('product.increase', 'افزایش')} disabled={quantity >= product.stock}>
+                      <Icon name="plus" size={18} />
+                    </button>
+                    <span aria-live="polite">{num(quantity)}</span>
+                    <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} aria-label={t('product.decrease', 'کاهش')} disabled={quantity <= 1}>
+                      <Icon name="minus" size={18} />
+                    </button>
+                  </div>
+                  <button onClick={handleAddToCart} disabled={addingToCart} className="btn btn-primary btn-lg pdp-add">
+                    <Icon name="bag" size={20} />
+                    {addingToCart ? t('common.loading') : t('common.addToCart')}
+                  </button>
                   <button
                     type="button"
-                    onClick={() => setSelectedSize(product.size)}
-                    className={`size-btn ${selectedSize === product.size ? 'active' : ''}`}
+                    className={`pdp-fav ${isFavorite ? 'on' : ''}`}
+                    onClick={handleFavorite}
+                    aria-pressed={isFavorite}
+                    aria-label={isFavorite ? t('product.removeFavorite', 'حذف از علاقه‌مندی‌ها') : t('product.addFavorite', 'افزودن به علاقه‌مندی‌ها')}
                   >
-                    {product.size}
+                    <Icon name="heart" size={22} filled={isFavorite} />
                   </button>
                 </div>
-                <button onClick={() => setShowSizeGuide(true)} className="size-guide-link">
-                  {t('product.sizeGuide')}
-                </button>
-              </div>
-            )}
-
-            <div className="stock-status">
-              {product.in_stock ? (
-                <span className="in-stock">✓ {t('common.inStock')} ({product.stock})</span>
-              ) : (
-                <span className="out-of-stock">✗ {t('common.outOfStock')}</span>
               )}
             </div>
 
-            {product.in_stock && (
-              <div className="purchase-section">
-                <div className="quantity-selector">
-                  <button
-                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="qty-btn"
-                  >
-                    −
-                  </button>
-                  <span className="qty-value">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
-                    className="qty-btn"
-                  >
-                    +
-                  </button>
+            <dl className="pdp-meta">
+              <div><dt>{t('product.sku', 'کد محصول')}:</dt><dd>{num(String(product.id).padStart(6, '0'))}</dd></div>
+              {categoryName && (
+                <div>
+                  <dt>{t('product.category')}:</dt>
+                  <dd><Link to={`/products?category=${product.category.slug}`}>{categoryName}</Link></dd>
                 </div>
-                <button
-                  onClick={handleAddToCart}
-                  disabled={addingToCart}
-                  className="btn btn-primary btn-lg"
-                >
-                  {addingToCart ? t('common.loading') : t('common.addToCart')}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+              )}
+            </dl>
 
-        <div className="product-details">
-          <div className="details-section">
-            <h2>{t('product.productOverview')}</h2>
-            <p>{product.description}</p>
-          </div>
-
-          {(product.material || product.weight) && (
-            <div className="details-section">
-              <h2>{t('product.specifications')}</h2>
-              <div className="specs-grid">
-                {product.material && (
-                  <div className="spec-item">
-                    <span className="spec-label">{t('product.material')}</span>
-                    <span className="spec-value">{product.material}</span>
-                  </div>
-                )}
-                {product.weight && (
-                  <div className="spec-item">
-                    <span className="spec-label">{t('product.weight')}</span>
-                    <span className="spec-value">{product.weight}g</span>
-                  </div>
-                )}
-                {product.color && (
-                  <div className="spec-item">
-                    <span className="spec-label">{t('product.color')}</span>
-                    <span className="spec-value">{product.color}</span>
-                  </div>
-                )}
-              </div>
+            <div className="pdp-perks">
+              <div><Icon name="truck" size={22} /> {t('home.trustShipText', 'ارسال رایگان به سراسر کشور')}</div>
+              <div><Icon name="returns" size={22} /> {t('home.trustReturnText', '۷ روز ضمانت بازگشت کالا')}</div>
+              <div><Icon name="shield" size={22} /> {t('footer.genuine', 'ضمانت اصالت کالا')}</div>
             </div>
-          )}
-        </div>
-
-        <div className="reviews-section">
-          <h2>{t('product.customerReviews')} ({reviews.length})</h2>
-
-          {reviews.length > 0 ? (
-            <div className="reviews-list">
-              {reviews.map((review) => (
-                <div key={review.id} className="review-card">
-                  <div className="review-header">
-                    <div className="review-author">
-                      <span className="author-name">
-                        {review.user.display_name}
-                      </span>
-                      {review.is_verified_purchase && (
-                        <span className="verified-badge">{t('product.verifiedPurchase')}</span>
-                      )}
-                    </div>
-                    <span className="review-date">
-                      {new Date(review.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="review-rating">
-                    {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
-                  </div>
-                  <h4>{review.title}</h4>
-                  <p>{review.comment}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="no-reviews">{t('product.noReviews')}</p>
-          )}
-
-          {isAuthenticated && (
-            <form onSubmit={handleSubmitReview} className="review-form">
-              <h3>{t('product.writeReview')}</h3>
-              <div className="form-group">
-                <label className="form-label">{t('product.rating')}</label>
-                <div className="rating-input">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setReviewForm({ ...reviewForm, rating: star })}
-                      className={`star-btn ${star <= reviewForm.rating ? 'active' : ''}`}
-                    >
-                      ★
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">{t('product.title')}</label>
-                <input
-                  type="text"
-                  value={reviewForm.title}
-                  onChange={(e) => setReviewForm({ ...reviewForm, title: e.target.value })}
-                  className="form-input"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">{t('product.review')}</label>
-                <textarea
-                  value={reviewForm.comment}
-                  onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                  className="form-textarea"
-                  rows={4}
-                  required
-                />
-              </div>
-              <button type="submit" disabled={submittingReview} className="btn btn-primary">
-                {submittingReview ? t('common.loading') : t('product.submitReview')}
-              </button>
-            </form>
-          )}
+          </div>
         </div>
       </div>
 
+      <div className="pdp-details">
+        <div className="container narrow-wide">
+          <Accordion
+            id="about"
+            title={t('product.aboutProduct', 'درباره {{name}}', { name })}
+            open={openSection.about}
+            onToggle={() => setOpenSection((s) => ({ ...s, about: !s.about }))}
+          >
+            <p className="pdp-description">{description}</p>
+          </Accordion>
+
+          <Accordion
+            id="specs"
+            title={t('product.specifications')}
+            open={openSection.specs}
+            onToggle={() => setOpenSection((s) => ({ ...s, specs: !s.specs }))}
+          >
+            <dl className="spec-table">
+              {specs.map((s) => (
+                <div key={s.label}><dt>{s.label}</dt><dd>{s.value}</dd></div>
+              ))}
+            </dl>
+          </Accordion>
+
+          <Accordion
+            id="reviews"
+            title={`${t('product.customerReviews')} (${num(reviews.length)})`}
+            open={openSection.reviews}
+            onToggle={() => setOpenSection((s) => ({ ...s, reviews: !s.reviews }))}
+          >
+            {reviews.length > 0 ? (
+              <>
+                <div className="review-summary">
+                  <strong>{num(avgRating.toFixed(1))}</strong>
+                  <Stars value={avgRating} size={20} />
+                  <span>{t('product.reviewsCount', { count: num(reviews.length) })}</span>
+                </div>
+                <ul className="review-list">
+                  {reviews.map((review) => (
+                    <li key={review.id} className="review-item">
+                      <div className="review-head">
+                        <strong>{review.user.display_name}</strong>
+                        {review.is_verified_purchase && (
+                          <span className="verified"><Icon name="check" size={14} /> {t('product.verifiedPurchase')}</span>
+                        )}
+                        <time dateTime={review.created_at}>
+                          {formatDate(review.created_at, lang)}
+                        </time>
+                      </div>
+                      <Stars value={review.rating} size={14} />
+                      <h3>{review.title}</h3>
+                      <p>{review.comment}</p>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p className="muted">{t('product.noReviews')}</p>
+            )}
+
+            {isAuthenticated && !alreadyReviewed && (
+              <form onSubmit={handleSubmitReview} className="review-form">
+                <h3>{t('product.writeReview')}</h3>
+                <div className="form-group">
+                  <span className="form-label">{t('product.rating')}</span>
+                  <div className="rating-input" role="radiogroup" aria-label={t('product.rating')}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        role="radio"
+                        aria-checked={reviewForm.rating === star}
+                        aria-label={num(star)}
+                        onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                        className={star <= reviewForm.rating ? 'on' : ''}
+                      >
+                        <Icon name="star" size={26} filled={star <= reviewForm.rating} strokeWidth={1.4} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="review-title">{t('product.title')}</label>
+                  <input
+                    id="review-title"
+                    type="text"
+                    value={reviewForm.title}
+                    onChange={(e) => setReviewForm({ ...reviewForm, title: e.target.value })}
+                    className="form-input"
+                    maxLength={100}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="review-comment">{t('product.review')}</label>
+                  <textarea
+                    id="review-comment"
+                    value={reviewForm.comment}
+                    onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                    className="form-textarea"
+                    rows={4}
+                    required
+                  />
+                </div>
+                <button type="submit" disabled={submittingReview} className="btn btn-primary">
+                  {submittingReview ? t('common.loading') : t('product.submitReview')}
+                </button>
+              </form>
+            )}
+            {!isAuthenticated && (
+              <p className="muted">
+                <Link to="/login">{t('product.loginToReview', 'برای ثبت نظر وارد شوید')}</Link>
+              </p>
+            )}
+          </Accordion>
+        </div>
+      </div>
+
+      {related.length > 0 && (
+        <section className="band">
+          <div className="container">
+            <div className="section-head-center">
+              <h2 className="section-title">{t('product.related', 'محصولات مشابه')}</h2>
+            </div>
+            <div className="product-grid">
+              {related.map((p) => <ProductCard key={p.id} product={p} />)}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {product.in_stock && (
+        <div className="pdp-sticky-bar">
+          <div className="pdp-sticky-price">
+            <Price amount={effective} />
+          </div>
+          <button onClick={handleAddToCart} disabled={addingToCart} className="btn btn-primary">
+            {addingToCart ? t('common.loading') : t('common.addToCart')}
+          </button>
+        </div>
+      )}
+
       {showSizeGuide && (
         <div className="modal-overlay" onClick={() => setShowSizeGuide(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="size-guide-title" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>{t('product.sizeGuide')}</h2>
-              <button onClick={() => setShowSizeGuide(false)} className="modal-close">×</button>
+              <h2 id="size-guide-title">{t('product.sizeGuide')}</h2>
+              <button onClick={() => setShowSizeGuide(false)} className="icon-btn" aria-label={t('common.close', 'بستن')}>
+                <Icon name="close" />
+              </button>
             </div>
             <div className="modal-body">
               <p>{t('product.sizeGuideDesc')}</p>
@@ -364,10 +499,10 @@ export default function ProductDetail() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td>S</td><td>12-14 inches</td></tr>
-                  <tr><td>M</td><td>14-16 inches</td></tr>
-                  <tr><td>L</td><td>16-18 inches</td></tr>
-                  <tr><td>XL</td><td>18-20 inches</td></tr>
+                  <tr><td>S</td><td>{t('product.sizeS', '۳۰ تا ۳۵ سانتی‌متر')}</td></tr>
+                  <tr><td>M</td><td>{t('product.sizeM', '۳۵ تا ۴۰ سانتی‌متر')}</td></tr>
+                  <tr><td>L</td><td>{t('product.sizeL', '۴۰ تا ۴۵ سانتی‌متر')}</td></tr>
+                  <tr><td>XL</td><td>{t('product.sizeXL', '۴۵ تا ۵۰ سانتی‌متر')}</td></tr>
                 </tbody>
               </table>
             </div>
