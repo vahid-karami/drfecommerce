@@ -25,7 +25,11 @@
     "noProducts": "محصولی یافت نشد",
     "viewAll": "مشاهده همه →",
     "shopNow": "خرید →",
-    "toman": "تومان"
+    "toman": "تومان",
+    "breadcrumb": "مسیر صفحه",
+    "close": "بستن",
+    "home": "خانه",
+    "required": "الزامی است"
   },
   "header": {
     "freeShipping": "ارسال رایگان برای سفارش‌های بالای ۵۰۰,۰۰۰ تومان",
@@ -34,7 +38,19 @@
     "categories": "دسته‌بندی‌ها",
     "myAccount": "حساب کاربری",
     "myOrders": "سفارش‌های من",
-    "myFavorites": "علاقه‌مندی‌های من"
+    "myFavorites": "علاقه‌مندی‌های من",
+    "adminPanel": "پنل مدیریت",
+    "announcement": "ارسال رایگان به سراسر ایران · ۷ روز ضمانت بازگشت کالا",
+    "closeMenu": "بستن منو",
+    "hello": "سلام",
+    "loginOrSignup": "ورود یا ثبت‌نام",
+    "mainNav": "منوی اصلی",
+    "megaPromoTitle": "پیشنهادهای ویژه این هفته",
+    "offers": "تخفیف‌ها",
+    "openMenu": "باز کردن منو",
+    "productTypes": "دسته‌بندی محصولات",
+    "quickLinks": "دسترسی سریع",
+    "searchPlaceholder": "جستجوی محصول، مثلاً زانوبند"
   },
   "home": {
     "heroBadge": "متخصصان بهبود ورزشی",
@@ -50,7 +66,55 @@
     "shopByGoalDesc": "به دنبال چه چیزی هستید؟",
     "featuredProducts": "محصولات ویژه",
     "findRightSupport": "یافتن حمایت مناسب",
-    "findRightSupportDesc": "راهنماهایی برای کمک به شما در انتخاب آگاهانه"
+    "findRightSupportDesc": "راهنماهایی برای کمک به شما در انتخاب آگاهانه",
+    "aboutText": "ساپورت‌ها و پوشاک فشاری اسپورت‌مد با پارچه‌های تنفس‌پذیر و فشار هدفمند، گردش خون را بهبود می‌دهند و به ثبات مفصل کمک می‌کنند؛ نتیجه، درد کمتر، ریکاوری سریع‌تر و اعتماد به نفس بیشتر در حرکت است. برای شروع، عضو بدن یا نوع محصول مورد نظرتان را انتخاب کنید.",
+    "aboutTitle": "اسپورت‌مد",
+    "adviceCta": "تماس با کارشناس",
+    "adviceEyebrow": "مشاوره رایگان",
+    "adviceText": "کارشناسان ما کمک می‌کنند ساپورتی را انتخاب کنید که دقیقاً به نیاز شما پاسخ می‌دهد.",
+    "adviceTitle": "در انتخاب سایز یا مدل مردد هستید؟",
+    "discover": "بیشتر بدانید",
+    "featuredSlides": "معرفی محصولات",
+    "findYourProduct": "محصول مناسب خود را پیدا کنید",
+    "guideAnkleText": "از ثابت‌سازی اولیه تا بازگشت کامل به تمرین.",
+    "guideAnkleTitle": "پیچ‌خوردگی مچ پا",
+    "guideBackText": "پشتیبانی از ستون فقرات در کار، رانندگی و ورزش.",
+    "guideBackTitle": "رهایی از کمردرد",
+    "guideKneeText": "علت‌ها، علائم و ساپورت مناسب برای هر مرحله.",
+    "guideKneeTitle": "راهنمای زانودرد",
+    "howWeHelp": "اسپورت‌مد چگونه کمک می‌کند",
+    "howWeHelpText": "از درد مزمن مفاصل تا آسیب‌های ورزشی؛ راه‌هایی را ببینید که به شما کمک می‌کنند فعال بمانید.",
+    "metaDescription": "زانوبند، قوزک‌بند، کمربند طبی و پوشاک فشاری برای پیشگیری، درمان و عملکرد بهتر.",
+    "metaTitle": "ساپورت‌ها و بریس‌های ورزشی و طبی",
+    "nextSlide": "اسلاید بعدی",
+    "prevSlide": "اسلاید قبلی",
+    "scrollBack": "قبلی",
+    "scrollForward": "بعدی",
+    "seeOffers": "مشاهده پیشنهادها",
+    "shopByType": "خرید بر اساس نوع محصول",
+    "slide1Cta": "خرید زانوبند",
+    "slide1Eyebrow": "حمایت هدفمند از زانو",
+    "slide1Text": "زانوبندها و اسلیوهای فشاری ما با پشتیبانی دقیق از مفصل، درد را کم می‌کنند و ثبات را به حرکت برمی‌گردانند.",
+    "slide1Title": "با خیال راحت به میدان برگرد",
+    "slide2Cta": "مشاهده ساپورت‌های کمر",
+    "slide2Eyebrow": "سلامت ستون فقرات",
+    "slide2Text": "ساپورت‌های کمری با فشار یکنواخت، عضلات را آرام می‌کنند و در کار روزانه و ورزش همراه شما هستند.",
+    "slide2Title": "کمردرد را جدی بگیرید",
+    "slide3Eyebrow": "پیشنهاد ویژه",
+    "slide3Text": "منتخبی از پرفروش‌ترین ساپورت‌ها با قیمت ویژه، فقط برای مدت محدود.",
+    "slide3Title": "تخفیف‌های این هفته",
+    "topSellers": "پرفروش‌ترین‌ها",
+    "trustPayText": "درگاه زرین‌پال و آیدی‌پی",
+    "trustPayTitle": "پرداخت امن",
+    "trustReturnText": "۷ روز ضمانت بازگشت کالا",
+    "trustReturnTitle": "بازگشت آسان",
+    "trustShipText": "ارسال رایگان به سراسر کشور",
+    "trustShipTitle": "ارسال سریع",
+    "trustSupportText": "مشاوره پیش و پس از خرید",
+    "trustSupportTitle": "پشتیبانی تخصصی",
+    "viewAllBodyParts": "مشاهده همه",
+    "viewAllCategories": "همه دسته‌ها",
+    "viewAllProducts": "همه محصولات"
   },
   "bodyParts": {
     "knee": "زانو",
@@ -115,7 +179,17 @@
     "clearFilters": "پاک کردن فیلترها",
     "previous": "قبلی",
     "next": "بعدی",
-    "page": "صفحه {{current}} از {{total}}"
+    "page": "صفحه {{current}} از {{total}}",
+    "allProductsDesc": "ساپورت‌ها، بریس‌ها و پوشاک فشاری برای پیشگیری، درمان و عملکرد بهتر.",
+    "apply": "اعمال",
+    "availability": "موجودی و تخفیف",
+    "bodyPartTitle": "ساپورت‌های {{part}}",
+    "maxPrice": "تا (تومان)",
+    "minPrice": "از (تومان)",
+    "offersDesc": "منتخبی از ساپورت‌ها با قیمت ویژه.",
+    "onSaleOnly": "فقط کالاهای تخفیف‌دار",
+    "pagination": "صفحه‌بندی",
+    "searchResults": "نتایج جستجو برای «{{query}}»"
   },
   "product": {
     "notFound": "محصول یافت نشد",
@@ -138,7 +212,34 @@
     "noReviews": "هنوز نظری ثبت نشده است. اولین نفر باشید!",
     "verifiedPurchase": "خرید تأیید شده",
     "savePercent": "ذخیره {{percent}}٪",
-    "productOverview": "نمای کلی محصول"
+    "productOverview": "نمای کلی محصول",
+    "aboutProduct": "درباره {{name}}",
+    "addFavorite": "افزودن به علاقه‌مندی‌ها",
+    "available": "موجود",
+    "beFirstReview": "اولین نظر را ثبت کنید",
+    "bestseller": "پرفروش",
+    "brand": "برند",
+    "category": "دسته‌بندی",
+    "decrease": "کاهش",
+    "discountBadge": "{{percent}}٪ تخفیف",
+    "grams": "گرم",
+    "highlightMaterial": "جنس: {{material}}",
+    "highlightShipping": "ارسال رایگان و ۷ روز ضمانت بازگشت",
+    "highlightSize": "سایز موجود: {{size}}",
+    "images": "تصاویر محصول",
+    "increase": "افزایش",
+    "loginToReview": "برای ثبت نظر وارد شوید",
+    "quickView": "مشاهده سریع",
+    "ratingSummary": "{{rating}} از ۵ · {{count}} نظر",
+    "related": "محصولات مشابه",
+    "removeFavorite": "حذف از علاقه‌مندی‌ها",
+    "reviewSubmitted": "نظر شما ثبت شد.",
+    "sizeL": "۴۰ تا ۴۵ سانتی‌متر",
+    "sizeM": "۳۵ تا ۴۰ سانتی‌متر",
+    "sizeS": "۳۰ تا ۳۵ سانتی‌متر",
+    "sizeXL": "۴۵ تا ۵۰ سانتی‌متر",
+    "sku": "کد محصول",
+    "viewDetails": "مشاهده جزئیات"
   },
   "cart": {
     "shoppingCart": "سبد خرید",
@@ -157,7 +258,8 @@
     "fastDelivery": "ارسال سریع",
     "clearCart": "خالی کردن سبد",
     "addedToCart": "به سبد خرید اضافه شد!",
-    "addFailed": "افزودن به سبد خرید ناموفق بود"
+    "addFailed": "افزودن به سبد خرید ناموفق بود",
+    "quantity": "تعداد"
   },
   "checkout": {
     "title": "تکمیل خرید",
@@ -177,7 +279,11 @@
     "total": "مجموع",
     "free": "رایگان",
     "placingOrder": "در حال ثبت سفارش...",
-    "orderFailed": "ثبت سفارش ناموفق بود"
+    "orderFailed": "ثبت سفارش ناموفق بود",
+    "invalidPostalCode": "کد پستی باید ۱۰ رقم باشد",
+    "orderSuccess": "سفارش شما با موفقیت ثبت شد",
+    "selectCity": "انتخاب شهر",
+    "selectProvince": "انتخاب استان"
   },
   "auth": {
     "welcomeBack": "خوش آمدید",
@@ -204,7 +310,19 @@
     "registrationSuccess": "ثبت‌نام با موفقیت انجام شد!",
     "loginSuccess": "ورود موفقیت‌آمیز!",
     "alreadyHaveAccount": "قبلاً حساب کاربری دارید؟",
-    "dontHaveAccount": "حساب کاربری ندارید؟"
+    "dontHaveAccount": "حساب کاربری ندارید؟",
+    "fillFields": "لطفاً تمام فیلدها را پر کنید",
+    "identifierMin": "نام کاربری باید حداقل ۳ کاراکتر باشد",
+    "invalidCode": "لطفاً کد ۶ رقمی را وارد کنید",
+    "invalidCredentials": "نام کاربری یا رمز عبور اشتباه است",
+    "invalidOtp": "کد تایید نامعتبر است",
+    "invalidPhone": "لطفاً شماره موبایل معتبر وارد کنید (مثلاً ۰۹۱۲۳۴۵۶۷۸۹)",
+    "loginSubtitle": "ورود به حساب کاربری اسپورت‌مد",
+    "otpSendFailed": "ارسال کد تایید ناموفق بود",
+    "otpSent": "کد تایید ارسال شد",
+    "otpSentTo": "کد ارسال شد به",
+    "passwordPlaceholder": "رمز عبور خود را وارد کنید",
+    "registrationFailed": "ثبت‌نام انجام نشد. لطفاً اطلاعات را بررسی کنید."
   },
   "orders": {
     "myOrders": "سفارش‌های من",
@@ -218,7 +336,11 @@
     "items": "اقلام",
     "quantity": "تعداد",
     "backToOrders": "بازگشت به سفارش‌ها",
-    "orderPlaced": "سفارش ثبت شده"
+    "orderPlaced": "سفارش ثبت شده",
+    "cancelConfirm": "آیا از لغو این سفارش مطمئن هستید؟",
+    "cancelFailed": "لغو سفارش انجام نشد",
+    "notFound": "سفارش پیدا نشد",
+    "viewAll": "همه سفارش‌ها"
   },
   "favorites": {
     "myFavorites": "علاقه‌مندی‌های من",
@@ -230,5 +352,34 @@
   "languages": {
     "en": "English",
     "fa": "فارسی"
+  },
+  "categories": {
+    "description": "همه دسته‌بندی‌های محصولات اسپورت‌مد را ببینید."
+  },
+  "footer": {
+    "about": "اسپورت‌مد فروشگاه تخصصی ساپورت‌ها و بریس‌های ورزشی و طبی است؛ برای پیشگیری از آسیب، همراهی در دوران درمان و بازگشت مطمئن به فعالیت.",
+    "advice": "مشاوره انتخاب سایز",
+    "copyright": "اسپورت‌مد. تمامی حقوق محفوظ است.",
+    "customerService": "خدمات مشتریان",
+    "emailPlaceholder": "ایمیل شما",
+    "genuine": "ضمانت اصالت کالا",
+    "hours": "شنبه تا پنج‌شنبه، ۹ تا ۱۸",
+    "newsletter": "خبرنامه",
+    "newsletterDesc": "از تخفیف‌ها و راهنماهای تازه باخبر شوید.",
+    "paymentMethods": "روش‌های پرداخت",
+    "returns": "۷ روز ضمانت بازگشت",
+    "securePay": "پرداخت امن زرین‌پال و آیدی‌پی",
+    "subscribe": "عضویت",
+    "trackOrder": "پیگیری سفارش",
+    "whyUs": "چرا اسپورت‌مد"
+  },
+  "profile": {
+    "accountDetails": "اطلاعات حساب",
+    "memberSince": "عضو از",
+    "myProfile": "حساب کاربری من",
+    "quickLinks": "دسترسی سریع",
+    "saveChanges": "ذخیره تغییرات",
+    "updateFailed": "ذخیره اطلاعات انجام نشد",
+    "updateSuccess": "اطلاعات شما ذخیره شد"
   }
 }

@@ -25,7 +25,11 @@
     "noProducts": "No products found",
     "viewAll": "View all →",
     "shopNow": "Shop now →",
-    "toman": "Toman"
+    "toman": "Toman",
+    "breadcrumb": "Breadcrumb",
+    "close": "Close",
+    "home": "Home",
+    "required": "Required"
   },
   "header": {
     "freeShipping": "Free shipping on orders over 500,000 Toman",
@@ -34,7 +38,19 @@
     "categories": "Categories",
     "myAccount": "My Account",
     "myOrders": "My Orders",
-    "myFavorites": "My Favorites"
+    "myFavorites": "My Favorites",
+    "adminPanel": "Admin panel",
+    "announcement": "Free shipping across Iran · 7-day returns",
+    "closeMenu": "Close menu",
+    "hello": "Hi",
+    "loginOrSignup": "Log in or sign up",
+    "mainNav": "Main navigation",
+    "megaPromoTitle": "This week's special offers",
+    "offers": "Offers",
+    "openMenu": "Open menu",
+    "productTypes": "Product types",
+    "quickLinks": "Quick links",
+    "searchPlaceholder": "Search products, e.g. knee brace"
   },
   "home": {
     "heroBadge": "Sports Recovery Specialists",
@@ -50,7 +66,55 @@
     "shopByGoalDesc": "What are you looking to achieve?",
     "featuredProducts": "Featured Products",
     "findRightSupport": "Find the Right Support",
-    "findRightSupportDesc": "Guides to help you make informed choices"
+    "findRightSupportDesc": "Guides to help you make informed choices",
+    "aboutText": "SportMed supports and compression wear use breathable fabrics and targeted compression to improve circulation and joint stability — meaning less pain, faster recovery and more confidence in every movement. Start by choosing a body part or product type.",
+    "aboutTitle": "SportMed",
+    "adviceCta": "Talk to an expert",
+    "adviceEyebrow": "Free advice",
+    "adviceText": "Our specialists help you pick the support that fits your needs exactly.",
+    "adviceTitle": "Not sure which size or model?",
+    "discover": "Discover",
+    "featuredSlides": "Featured products",
+    "findYourProduct": "Find your product",
+    "guideAnkleText": "From first stabilisation to a full return to training.",
+    "guideAnkleTitle": "Ankle sprains",
+    "guideBackText": "Support for your spine at work, behind the wheel and in sport.",
+    "guideBackTitle": "Relief from back pain",
+    "guideKneeText": "Causes, symptoms and the right support for each stage.",
+    "guideKneeTitle": "Guide to knee pain",
+    "howWeHelp": "How SportMed can help",
+    "howWeHelpText": "From chronic joint pain to sports injuries — explore the ways we help you stay active.",
+    "metaDescription": "Knee braces, ankle supports, back supports and compression wear for prevention, recovery and performance.",
+    "metaTitle": "Sports & medical supports and braces",
+    "nextSlide": "Next slide",
+    "prevSlide": "Previous slide",
+    "scrollBack": "Previous",
+    "scrollForward": "Next",
+    "seeOffers": "See offers",
+    "shopByType": "Shop by product type",
+    "slide1Cta": "Shop knee braces",
+    "slide1Eyebrow": "Targeted knee support",
+    "slide1Text": "Our knee braces and compression sleeves support the joint precisely, easing pain and restoring stability.",
+    "slide1Title": "Get back in the game with confidence",
+    "slide2Cta": "Shop back supports",
+    "slide2Eyebrow": "Spine health",
+    "slide2Text": "Even compression relaxes the muscles and supports you through daily work and sport.",
+    "slide2Title": "Take back pain seriously",
+    "slide3Eyebrow": "Special offer",
+    "slide3Text": "Best-selling supports at special prices, for a limited time.",
+    "slide3Title": "This week's deals",
+    "topSellers": "Top sellers",
+    "trustPayText": "ZarinPal & IDPay",
+    "trustPayTitle": "Secure payment",
+    "trustReturnText": "7-day returns",
+    "trustReturnTitle": "Easy returns",
+    "trustShipText": "Free shipping nationwide",
+    "trustShipTitle": "Fast delivery",
+    "trustSupportText": "Advice before and after you buy",
+    "trustSupportTitle": "Expert support",
+    "viewAllBodyParts": "View all",
+    "viewAllCategories": "All categories",
+    "viewAllProducts": "All products"
   },
   "bodyParts": {
     "knee": "Knee",
@@ -115,7 +179,17 @@
     "clearFilters": "Clear Filters",
     "previous": "Previous",
     "next": "Next",
-    "page": "Page {{current}} of {{total}}"
+    "page": "Page {{current}} of {{total}}",
+    "allProductsDesc": "Supports, braces and compression wear for prevention, recovery and performance.",
+    "apply": "Apply",
+    "availability": "Availability & offers",
+    "bodyPartTitle": "{{part}} supports",
+    "maxPrice": "To (Toman)",
+    "minPrice": "From (Toman)",
+    "offersDesc": "Selected supports at special prices.",
+    "onSaleOnly": "On sale only",
+    "pagination": "Pagination",
+    "searchResults": "Search results for “{{query}}”"
   },
   "product": {
     "notFound": "Product not found",
@@ -138,7 +212,34 @@
     "noReviews": "No reviews yet. Be the first to review this product!",
     "verifiedPurchase": "Verified Purchase",
     "savePercent": "Save {{percent}}%",
-    "productOverview": "Product Overview"
+    "productOverview": "Product Overview",
+    "aboutProduct": "About {{name}}",
+    "addFavorite": "Add to favorites",
+    "available": "In stock",
+    "beFirstReview": "Be the first to review",
+    "bestseller": "Bestseller",
+    "brand": "Brand",
+    "category": "Category",
+    "decrease": "Decrease",
+    "discountBadge": "{{percent}}% off",
+    "grams": "g",
+    "highlightMaterial": "Material: {{material}}",
+    "highlightShipping": "Free shipping and 7-day returns",
+    "highlightSize": "Available size: {{size}}",
+    "images": "Product images",
+    "increase": "Increase",
+    "loginToReview": "Log in to write a review",
+    "quickView": "Quick view",
+    "ratingSummary": "{{rating}} of 5 · {{count}} reviews",
+    "related": "Related products",
+    "removeFavorite": "Remove from favorites",
+    "reviewSubmitted": "Your review was submitted.",
+    "sizeL": "40–45 cm",
+    "sizeM": "35–40 cm",
+    "sizeS": "30–35 cm",
+    "sizeXL": "45–50 cm",
+    "sku": "Product no.",
+    "viewDetails": "View details"
   },
   "cart": {
     "shoppingCart": "Shopping Cart",
@@ -157,7 +258,8 @@
     "fastDelivery": "Fast delivery",
     "clearCart": "Clear Cart",
     "addedToCart": "Added to cart!",
-    "addFailed": "Failed to add to cart"
+    "addFailed": "Failed to add to cart",
+    "quantity": "Quantity"
   },
   "checkout": {
     "title": "Checkout",
@@ -177,7 +279,11 @@
     "total": "Total",
     "free": "Free",
     "placingOrder": "Placing Order...",
-    "orderFailed": "Failed to place order"
+    "orderFailed": "Failed to place order",
+    "invalidPostalCode": "Postal code must be 10 digits",
+    "orderSuccess": "Order placed successfully!",
+    "selectCity": "Select city",
+    "selectProvince": "Select province"
   },
   "auth": {
     "welcomeBack": "Welcome Back",
@@ -204,7 +310,19 @@
     "registrationSuccess": "Registration successful!",
     "loginSuccess": "Login successful!",
     "alreadyHaveAccount": "Already have an account?",
-    "dontHaveAccount": "Don't have an account?"
+    "dontHaveAccount": "Don't have an account?",
+    "fillFields": "Please fill in all fields",
+    "identifierMin": "Username must be at least 3 characters",
+    "invalidCode": "Please enter the 6-digit code",
+    "invalidCredentials": "Incorrect username or password",
+    "invalidOtp": "Invalid verification code",
+    "invalidPhone": "Please enter a valid phone number (e.g. 09123456789)",
+    "loginSubtitle": "Sign in to your SportMed account",
+    "otpSendFailed": "Could not send the verification code",
+    "otpSent": "Verification code sent",
+    "otpSentTo": "Code sent to",
+    "passwordPlaceholder": "Enter your password",
+    "registrationFailed": "Registration failed. Please check your details."
   },
   "orders": {
     "myOrders": "My Orders",
@@ -218,7 +336,11 @@
     "items": "Items",
     "quantity": "Qty",
     "backToOrders": "Back to Orders",
-    "orderPlaced": "Order placed"
+    "orderPlaced": "Order placed",
+    "cancelConfirm": "Are you sure you want to cancel this order?",
+    "cancelFailed": "Could not cancel the order",
+    "notFound": "Order not found",
+    "viewAll": "All orders"
   },
   "favorites": {
     "myFavorites": "My Favorites",
@@ -230,5 +352,34 @@
   "languages": {
     "en": "English",
     "fa": "فارسی"
+  },
+  "categories": {
+    "description": "Browse every SportMed product category."
+  },
+  "footer": {
+    "about": "SportMed is a specialist store for sports and medical supports and braces — for injury prevention, recovery and a confident return to activity.",
+    "advice": "Sizing advice",
+    "copyright": "SportMed. All rights reserved.",
+    "customerService": "Customer service",
+    "emailPlaceholder": "Your email",
+    "genuine": "Genuine products guaranteed",
+    "hours": "Sat–Thu, 9:00–18:00",
+    "newsletter": "Newsletter",
+    "newsletterDesc": "Hear about new offers and guides first.",
+    "paymentMethods": "Payment methods",
+    "returns": "7-day returns",
+    "securePay": "Secure ZarinPal & IDPay checkout",
+    "subscribe": "Subscribe",
+    "trackOrder": "Track your order",
+    "whyUs": "Why SportMed"
+  },
+  "profile": {
+    "accountDetails": "Account details",
+    "memberSince": "Member since",
+    "myProfile": "My account",
+    "quickLinks": "Quick links",
+    "saveChanges": "Save changes",
+    "updateFailed": "Could not save your details",
+    "updateSuccess": "Your details were saved"
   }
 }
