@@ -287,3 +287,26 @@ def test_adding_existing_favorite_returns_list(shopper_with_cart):
     res = client.post(url, {"product_id": product.id}, format="json")
     assert res.status_code == status.HTTP_200_OK
     assert res.data["total_items"] == 1
+
+
+@pytest.mark.django_db
+def test_product_list_on_sale_and_featured_filters(api_client):
+    from products.models import Category, Product
+
+    cat = Category.objects.create(name="Knee", slug="knee")
+    Product.objects.create(category=cat, name="A", slug="a", description="d", price=100, discount_price=80)
+    Product.objects.create(category=cat, name="B", slug="b", description="d", price=100, is_featured=True)
+    url = reverse("products:product-list")
+    assert [p["slug"] for p in api_client.get(url, {"on_sale": "true"}).data["results"]] == ["a"]
+    assert [p["slug"] for p in api_client.get(url, {"is_featured": "true"}).data["results"]] == ["b"]
+
+
+@pytest.mark.django_db
+def test_profile_exposes_read_only_is_staff():
+    user = User.objects.create_user(phone="09121212121", password="securepass123")
+    client = APIClient()
+    client.force_authenticate(user)
+    res = client.patch(reverse("accounts:profile"), {"is_staff": True}, format="json")
+    assert res.data["is_staff"] is False
+    user.refresh_from_db()
+    assert user.is_staff is False

@@ -1,6 +1,7 @@
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 from django.db import transaction
+from django.db.models import F
 from rest_framework import filters, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -77,6 +78,14 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         in_stock = self.request.query_params.get("in_stock")
         if in_stock == "true":
             queryset = queryset.filter(stock__gt=0)
+
+        on_sale = self.request.query_params.get("on_sale")
+        if on_sale == "true":
+            queryset = queryset.filter(discount_price__isnull=False, discount_price__lt=F("price"))
+
+        is_featured = self.request.query_params.get("is_featured")
+        if is_featured == "true":
+            queryset = queryset.filter(is_featured=True)
 
         return queryset
 
