@@ -9,15 +9,6 @@
   flex-direction: row-reverse;
 }
 
-[dir="rtl"] .products-layout {
-  direction: rtl;
-}
-
-[dir="rtl"] .filters-sidebar {
-  left: auto;
-  right: 0;
-}
-
 [dir="rtl"] .product-main {
   direction: rtl;
 }
@@ -107,18 +98,6 @@
 }
 
 [dir="rtl"] .breadcrumb {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .pagination {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .active-filters {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .filter-chip {
   flex-direction: row-reverse;
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -36,6 +36,7 @@ export default function Header() {
   }, []);
 
   // Close every overlay on navigation.
+  const onSalePage = new URLSearchParams(location.search).get('on_sale') === 'true';
   const routeKey = location.pathname + location.search;
   const [lastRouteKey, setLastRouteKey] = useState(routeKey);
   if (routeKey !== lastRouteKey) {
@@ -150,12 +151,15 @@ export default function Header() {
               </div>
             </div>
 
-            <NavLink to="/products?on_sale=true" className="nav-link hide-md">
+            <Link
+              to="/products?on_sale=true"
+              className={`nav-link hide-md ${location.pathname === '/products' && onSalePage ? 'active' : ''}`}
+            >
               {t('header.offers', 'تخفیف‌ها')}
-            </NavLink>
-            <NavLink to="/categories" className="nav-link hide-md">
+            </Link>
+            <Link to="/categories" className={`nav-link hide-md ${location.pathname === '/categories' ? 'active' : ''}`}>
               {t('header.categories')}
-            </NavLink>
+            </Link>
           </nav>
 
           <div className="header-logo">

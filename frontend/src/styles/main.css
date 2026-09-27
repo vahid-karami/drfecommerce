@@ -700,27 +700,11 @@ html {
 
   
 
-  .products-layout {
-    flex-direction: column;
-  }
+  
 
-  .filters-sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100vh;
-    z-index: 200;
-    transform: translateX(-100%);
-    transition: transform var(--transition-normal);
-    background: var(--color-neutral-50);
-    padding: var(--spacing-6);
-    overflow-y: auto;
-  }
+  
 
-  .filters-sidebar.show {
-    transform: translateX(0);
-  }
+  
 
   .product-main {
     flex-direction: column;
@@ -1007,22 +991,7 @@ html {
 
   .header-actions {
     margin-left: 0;
-  }
-
-  
-
-  /* Home Mobile */
-  
-
-  
-
-  
-
-  
-
-  
-
-  }
+  }}
 
 /* ADMIN PORTAL */
 .admin-portal-layout {
