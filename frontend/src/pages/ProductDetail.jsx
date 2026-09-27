@@ -260,6 +260,17 @@ export default function ProductDetail() {
 
             <p className="pdp-lead">{description}</p>
 
+            {product.sports?.length > 0 && (
+              <div className="pdp-sports">
+                <span>{t('product.suitableFor', 'مناسب برای')}:</span>
+                {product.sports.map((s) => (
+                  <Link key={s.slug} to={`/products?sport=${s.slug}`} className="chip">
+                    {(lang === 'fa' && s.name_fa) || s.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+
             <ul className="pdp-highlights">
               {highlights.map((h) => (
                 <li key={h}><Icon name="checkCircle" size={20} /> {h}</li>

@@ -4,9 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useFavorites } from '../context/FavoritesContext';
-import apiClient from '../api/client';
-import { ENDPOINTS } from '../api/endpoints';
 import { BODY_PARTS } from '../utils/bodyParts';
+import { useCategories, useSports, sportName } from '../utils/catalog';
 import Icon from './Icon';
 import Logo from './Logo';
 import Price from './Price';
@@ -20,20 +19,14 @@ export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [categories, setCategories] = useState([]);
+  const categories = useCategories();
+  const sports = useSports();
   const [megaOpen, setMegaOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef(null);
-
-  useEffect(() => {
-    apiClient
-      .get(ENDPOINTS.categories)
-      .then((res) => setCategories(res.data.results || res.data))
-      .catch(() => setCategories([]));
-  }, []);
 
   // Close every overlay on navigation.
   const onSalePage = new URLSearchParams(location.search).get('on_sale') === 'true';
@@ -122,6 +115,18 @@ export default function Header() {
                       ))}
                     </ul>
                   </div>
+                  {sports.length > 0 && (
+                    <div className="mega-col">
+                      <h4 className="mega-title">{t('home.shopBySport', 'خرید بر اساس ورزش')}</h4>
+                      <ul className="mega-links">
+                        {sports.map((s) => (
+                          <li key={s.slug}>
+                            <Link to={`/products?sport=${s.slug}`}>{sportName(s, lang)}</Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   <div className="mega-col">
                     <h4 className="mega-title">{t('header.productTypes', 'دسته‌بندی محصولات')}</h4>
                     <ul className="mega-links">
@@ -258,6 +263,18 @@ export default function Header() {
               </Link>
             ))}
           </div>
+          {sports.length > 0 && (
+            <>
+              <p className="drawer-title">{t('home.shopBySport', 'خرید بر اساس ورزش')}</p>
+              <div className="drawer-chips">
+                {sports.map((s) => (
+                  <Link key={s.slug} to={`/products?sport=${s.slug}`} className="chip">
+                    {sportName(s, lang)}
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
           <p className="drawer-title">{t('header.productTypes', 'دسته‌بندی محصولات')}</p>
           <ul className="drawer-links">
             {categories.map((c) => (

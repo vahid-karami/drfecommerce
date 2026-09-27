@@ -10,6 +10,7 @@ import CardRail from '../components/CardRail';
 import Icon from '../components/Icon';
 import { BODY_PARTS } from '../utils/bodyParts';
 import { usePageMeta } from '../utils/seo';
+import { useCategories, useSports, sportName } from '../utils/catalog';
 
 const imageOf = (product) => product?.primary_image?.image;
 
@@ -18,8 +19,9 @@ export default function Home() {
   const lang = i18n.language === 'fa' ? 'fa' : 'en';
   const [products, setProducts] = useState([]);
   const [featured, setFeatured] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const categories = useCategories();
+  const sports = useSports();
 
   usePageMeta({
     title: t('home.metaTitle', 'ساپورت‌ها و بریس‌های ورزشی و طبی'),
@@ -27,15 +29,10 @@ export default function Home() {
   });
 
   useEffect(() => {
-    Promise.all([
-      apiClient.get(ENDPOINTS.products),
-      apiClient.get(ENDPOINTS.featuredProducts),
-      apiClient.get(ENDPOINTS.categories),
-    ])
-      .then(([allRes, featuredRes, categoriesRes]) => {
+    Promise.all([apiClient.get(ENDPOINTS.products), apiClient.get(ENDPOINTS.featuredProducts)])
+      .then(([allRes, featuredRes]) => {
         setProducts(allRes.data.results || allRes.data);
         setFeatured(featuredRes.data.results || featuredRes.data);
-        setCategories(categoriesRes.data.results || categoriesRes.data);
       })
       .catch((error) => console.error('Failed to load home page data:', error))
       .finally(() => setLoading(false));
@@ -73,6 +70,16 @@ export default function Home() {
     subtitle: t('products.productsCount', { count: c.product_count }),
     image: c.image || imageOf(byCategoryName[c.name]),
   }));
+
+  const sportTiles = sports
+    .filter((s) => s.product_count > 0)
+    .map((s) => ({
+      key: s.slug,
+      to: `/products?sport=${s.slug}`,
+      title: sportName(s, lang),
+      subtitle: t('products.productsCount', { count: s.product_count }),
+      image: s.cover_image,
+    }));
 
   const onSale = products.find((p) => p.discount_price && Number(p.effective_price) < Number(p.price));
 
@@ -154,14 +161,13 @@ export default function Home() {
         </section>
       )}
 
-      {categoryTiles.length > 0 && (
+      {sportTiles.length > 0 && (
         <section className="band">
           <div className="container">
             <CardRail
               eyebrow={t('home.findYourProduct', 'محصول مناسب خود را پیدا کنید')}
-              title={t('home.shopByType', 'خرید بر اساس نوع محصول')}
-              cta={{ to: '/categories', label: t('home.viewAllCategories', 'همه دسته‌ها') }}
-              items={categoryTiles}
+              title={t('home.shopBySport', 'خرید بر اساس ورزش')}
+              items={sportTiles}
               variant="soft"
             />
           </div>
@@ -208,6 +214,20 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {categoryTiles.length > 0 && (
+        <section className="band band-sky">
+          <div className="container">
+            <CardRail
+              eyebrow={t('home.findYourProduct', 'محصول مناسب خود را پیدا کنید')}
+              title={t('home.shopByType', 'خرید بر اساس نوع محصول')}
+              cta={{ to: '/categories', label: t('home.viewAllCategories', 'همه دسته‌ها') }}
+              items={categoryTiles}
+              variant="soft"
+            />
+          </div>
+        </section>
+      )}
 
       <section className="band band-tight">
         <div className="container">

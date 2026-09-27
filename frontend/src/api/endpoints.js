@@ -10,6 +10,7 @@ export const ENDPOINTS = {
   tokenRefresh: `${API_BASE_URL}/token/refresh/`,
 
   categories: `${API_BASE_URL}/products/categories/`,
+  sports: `${API_BASE_URL}/products/sports/`,
   products: `${API_BASE_URL}/products/`,
   productDetail: (slug) => `${API_BASE_URL}/products/${slug}/`,
   featuredProducts: `${API_BASE_URL}/products/featured/`,

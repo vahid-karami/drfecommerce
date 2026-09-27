@@ -10,6 +10,7 @@ import Breadcrumbs from '../components/Breadcrumbs';
 import { BODY_PARTS, bodyPartLabel } from '../utils/bodyParts';
 import { toPersianNumber } from '../hooks/useLanguage';
 import { usePageMeta } from '../utils/seo';
+import { useCategories, useSports, sportName } from '../utils/catalog';
 
 const PAGE_SIZE = 20;
 
@@ -49,12 +50,14 @@ export default function Products() {
   const num = (n) => (lang === 'fa' ? toPersianNumber(n) : String(n));
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const categories = useCategories();
+  const sports = useSports();
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
 
   const category = searchParams.get('category') || '';
   const injuryType = searchParams.get('injury_type') || '';
+  const sport = searchParams.get('sport') || '';
   const search = searchParams.get('search') || '';
   const inStock = searchParams.get('in_stock') || '';
   const onSale = searchParams.get('on_sale') || '';
@@ -67,6 +70,8 @@ export default function Products() {
 
   const currentCategory = categories.find((c) => c.slug === category);
   const categoryName = currentCategory ? (lang === 'fa' && currentCategory.name_fa) || currentCategory.name : '';
+  const currentSport = sports.find((s) => s.slug === sport);
+  const currentSportName = currentSport ? sportName(currentSport, lang) : sport;
 
   let title = t('products.allProducts');
   let subtitle = t('products.allProductsDesc', 'ساپورت‌ها، بریس‌ها و پوشاک فشاری برای پیشگیری، درمان و عملکرد بهتر.');
@@ -76,6 +81,9 @@ export default function Products() {
   } else if (currentCategory) {
     title = categoryName;
     subtitle = (lang === 'fa' && currentCategory.description_fa) || currentCategory.description || subtitle;
+  } else if (sport) {
+    title = t('products.sportTitle', 'ساپورت‌های مناسب {{sport}}', { sport: currentSportName });
+    subtitle = t('products.sportDesc', 'محصولاتی که برای این ورزش پیشنهاد می‌کنیم.');
   } else if (injuryType) {
     const part = BODY_PARTS.find((p) => p.key === injuryType);
     title = t('products.bodyPartTitle', 'ساپورت‌های {{part}}', { part: bodyPartLabel(injuryType, lang) });
@@ -88,16 +96,10 @@ export default function Products() {
   usePageMeta({ title, description: subtitle || title });
 
   useEffect(() => {
-    apiClient
-      .get(ENDPOINTS.categories)
-      .then((res) => setCategories(res.data.results || res.data))
-      .catch((error) => console.error('Failed to fetch categories:', error));
-  }, []);
-
-  useEffect(() => {
     const params = new URLSearchParams();
     if (category) params.append('category', category);
     if (injuryType) params.append('injury_type', injuryType);
+    if (sport) params.append('sport', sport);
     if (search) params.append('search', search);
     if (inStock) params.append('in_stock', inStock);
     if (onSale) params.append('on_sale', onSale);
@@ -125,7 +127,7 @@ export default function Products() {
     return () => {
       cancelled = true;
     };
-  }, [category, injuryType, search, inStock, onSale, minPrice, maxPrice, ordering, page]);
+  }, [category, injuryType, sport, search, inStock, onSale, minPrice, maxPrice, ordering, page]);
 
   const updateParams = (changes) => {
     const next = new URLSearchParams(searchParams);
@@ -148,6 +150,7 @@ export default function Products() {
 
   const activeChips = [];
   if (injuryType) activeChips.push({ key: 'injury_type', label: bodyPartLabel(injuryType, lang) });
+  if (sport) activeChips.push({ key: 'sport', label: currentSportName });
   if (category) activeChips.push({ key: 'category', label: categoryName || category });
   if (onSale) activeChips.push({ key: 'on_sale', label: t('header.offers', 'تخفیف‌ها') });
   if (inStock) activeChips.push({ key: 'in_stock', label: t('products.inStockOnly') });
@@ -220,6 +223,28 @@ export default function Products() {
                 </div>
               )}
             </FilterPill>
+
+            {sports.length > 0 && (
+              <FilterPill label={t('products.sport', 'ورزش')} count={sport ? 1 : 0}>
+                {({ close }) => (
+                  <div className="filter-options">
+                    {sports.map((s) => (
+                      <button
+                        key={s.slug}
+                        type="button"
+                        className={`chip ${sport === s.slug ? 'active' : ''}`}
+                        onClick={() => {
+                          updateParams({ sport: sport === s.slug ? '' : s.slug });
+                          close();
+                        }}
+                      >
+                        {sportName(s, lang)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </FilterPill>
+            )}
 
             <FilterPill label={t('products.category')} count={category ? 1 : 0}>
               {({ close }) => (

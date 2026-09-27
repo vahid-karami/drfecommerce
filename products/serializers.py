@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Category, Product, ProductImage
+from .models import Category, Product, ProductImage, Sport
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -33,6 +33,33 @@ class CategorySerializer(serializers.ModelSerializer):
     def get_description_localized(self, obj):
         lang = self.context.get('lang', 'en')
         return obj.get_description(lang)
+
+
+class SportSerializer(serializers.ModelSerializer):
+    name_localized = serializers.SerializerMethodField()
+    product_count = serializers.SerializerMethodField()
+    cover_image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Sport
+        fields = ["id", "name", "name_fa", "slug", "name_localized", "product_count", "cover_image"]
+
+    def get_name_localized(self, obj):
+        return obj.get_name(self.context.get("lang", "en"))
+
+    def get_product_count(self, obj):
+        return obj.products.filter(is_active=True).count()
+
+    def get_cover_image(self, obj):
+        """The sport's own image, else a photo of one of its products."""
+        if obj.image:
+            return obj.image.url
+        image = (
+            ProductImage.objects.filter(product__sports=obj, product__is_active=True)
+            .order_by("-is_primary", "product__created_at")
+            .first()
+        )
+        return image.image.url if image else None
 
 
 class ProductImageSerializer(serializers.ModelSerializer):
@@ -81,8 +108,15 @@ class ProductListSerializer(serializers.ModelSerializer):
         return obj.get_name(lang)
 
 
+class SportBriefSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Sport
+        fields = ["id", "name", "name_fa", "slug"]
+
+
 class ProductDetailSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
+    sports = SportBriefSerializer(many=True, read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
     effective_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     name_localized = serializers.SerializerMethodField()
@@ -98,6 +132,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "description",
             "description_fa",
             "category",
+            "sports",
             "price",
             "discount_price",
             "effective_price",
@@ -191,6 +226,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             "description",
             "description_fa",
             "category",
+            "sports",
             "price",
             "price_irr",
             "cost",

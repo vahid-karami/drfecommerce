@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Category, Product, ProductImage
+from .models import Category, Product, ProductImage, Sport
 
 
 class ProductImageInline(admin.TabularInline):
@@ -18,6 +18,14 @@ class CategoryAdmin(admin.ModelAdmin):
     def product_count(self, obj):
         return obj.products.filter(is_active=True).count()
     product_count.short_description = "Active Products"
+
+
+@admin.register(Sport)
+class SportAdmin(admin.ModelAdmin):
+    list_display = ["name", "name_fa", "slug", "sort_order", "is_active"]
+    list_editable = ["sort_order", "is_active"]
+    search_fields = ["name", "name_fa"]
+    prepopulated_fields = {"slug": ("name",)}
 
 
 @admin.register(Product)
@@ -46,6 +54,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_editable = ["price", "stock", "is_active", "is_featured"]
     list_per_page = 50
     autocomplete_fields = ["category"]
+    filter_horizontal = ["sports"]
     inlines = [ProductImageInline]
     fieldsets = (
         (None, {
@@ -55,7 +64,7 @@ class ProductAdmin(admin.ModelAdmin):
             "fields": ("price", "discount_price", "stock")
         }),
         ("Classification", {
-            "fields": ("injury_type", "size", "color", "material", "weight")
+            "fields": ("injury_type", "sports", "size", "color", "material", "weight")
         }),
         ("Display Options", {
             "fields": ("is_active", "is_featured")

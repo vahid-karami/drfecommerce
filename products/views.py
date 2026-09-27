@@ -6,9 +6,10 @@ from rest_framework import filters, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .models import Category, Product
+from .models import Category, Product, Sport
 from .serializers import (
     CategorySerializer,
+    SportSerializer,
     ProductAdminSerializer,
     ProductCreateSerializer,
     ProductDetailSerializer,
@@ -27,6 +28,19 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
         kwargs.setdefault('context', {})
         kwargs['context']['lang'] = lang
         return super().get_serializer(*args, **kwargs)
+
+
+class SportViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Sport.objects.filter(is_active=True)
+    serializer_class = SportSerializer
+    permission_classes = [permissions.AllowAny]
+    lookup_field = "slug"
+    pagination_class = None
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["lang"] = self.request.query_params.get("lang", "en")
+        return context
 
 
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
@@ -58,6 +72,10 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         injury_type = self.request.query_params.get("injury_type")
         if injury_type:
             queryset = queryset.filter(injury_type=injury_type)
+
+        sport = self.request.query_params.get("sport")
+        if sport:
+            queryset = queryset.filter(sports__slug=sport).distinct()
 
         brand = self.request.query_params.get("brand")
         if brand:

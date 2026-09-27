@@ -94,6 +94,19 @@
 
 .stars { display: inline-flex; gap: 1px; color: #f2b01e; }
 
+.pdp-sports {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: var(--spacing-4);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
+
+.pdp-sports .chip { padding: 5px 12px; font-size: var(--font-size-xs); }
+
 .pdp-lead { margin-top: var(--spacing-5); color: var(--color-neutral-700); line-height: 2; }
 
 .pdp-highlights {

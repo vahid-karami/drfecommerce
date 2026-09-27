@@ -189,7 +189,10 @@
     "offersDesc": "منتخبی از ساپورت‌ها با قیمت ویژه.",
     "onSaleOnly": "فقط کالاهای تخفیف‌دار",
     "pagination": "صفحه‌بندی",
-    "searchResults": "نتایج جستجو برای «{{query}}»"
+    "searchResults": "نتایج جستجو برای «{{query}}»",
+    "sport": "ورزش",
+    "sportTitle": "ساپورت‌های مناسب {{sport}}",
+    "sportDesc": "محصولاتی که برای این ورزش پیشنهاد می‌کنیم."
   },
   "product": {
     "notFound": "محصول یافت نشد",
@@ -239,7 +242,8 @@
     "sizeS": "۳۰ تا ۳۵ سانتی‌متر",
     "sizeXL": "۴۵ تا ۵۰ سانتی‌متر",
     "sku": "کد محصول",
-    "viewDetails": "مشاهده جزئیات"
+    "viewDetails": "مشاهده جزئیات",
+    "suitableFor": "مناسب برای"
   },
   "cart": {
     "shoppingCart": "سبد خرید",

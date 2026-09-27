@@ -189,7 +189,10 @@
     "offersDesc": "Selected supports at special prices.",
     "onSaleOnly": "On sale only",
     "pagination": "Pagination",
-    "searchResults": "Search results for “{{query}}”"
+    "searchResults": "Search results for “{{query}}”",
+    "sport": "Sport",
+    "sportTitle": "Supports for {{sport}}",
+    "sportDesc": "Products we recommend for this sport."
   },
   "product": {
     "notFound": "Product not found",
@@ -239,7 +242,8 @@
     "sizeS": "30–35 cm",
     "sizeXL": "45–50 cm",
     "sku": "Product no.",
-    "viewDetails": "View details"
+    "viewDetails": "View details",
+    "suitableFor": "Suitable for"
   },
   "cart": {
     "shoppingCart": "Shopping Cart",

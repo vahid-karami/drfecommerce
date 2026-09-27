@@ -31,6 +31,29 @@ class Category(models.Model):
         return self.description
 
 
+class Sport(models.Model):
+    """An activity customers shop by (running, football, ...)."""
+
+    name = models.CharField(max_length=100)
+    name_fa = models.CharField(max_length=100, blank=True, verbose_name="Name (Persian)")
+    slug = models.SlugField(unique=True)
+    image = models.ImageField(upload_to="sports/", blank=True, null=True)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "sports"
+        ordering = ["sort_order", "name"]
+
+    def __str__(self):
+        return self.name
+
+    def get_name(self, lang='en'):
+        if lang == 'fa' and self.name_fa:
+            return self.name_fa
+        return self.name
+
+
 class Product(models.Model):
     INJURY_TYPE_KNEE = "knee"
     INJURY_TYPE_ANKLE = "ankle"
@@ -55,6 +78,7 @@ class Product(models.Model):
     ]
 
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="products")
+    sports = models.ManyToManyField(Sport, blank=True, related_name="products")
     name = models.CharField(max_length=200)
     name_fa = models.CharField(max_length=200, blank=True, verbose_name="Name (Persian)")
     slug = models.SlugField(unique=True)
