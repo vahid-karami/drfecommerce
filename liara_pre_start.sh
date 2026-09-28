@@ -11,5 +11,7 @@ python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 # Load the demo catalogue on first boot only.
 python manage.py seed_demo_store
+# Fill in missing category photos (never replaces images uploaded in the admin).
+python manage.py seed_category_images
 
 echo "SportMed pre-start finished."

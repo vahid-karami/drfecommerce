@@ -380,7 +380,10 @@
     "fa": "فارسی"
   },
   "categories": {
-    "description": "Browse every SportMed product category."
+    "description": "Browse every SportMed product category.",
+    "title": "Product categories",
+    "intro": "Find the right support by product type, body part or sport.",
+    "viewProducts": "View products"
   },
   "footer": {
     "about": "SportMed is a specialist store for sports and medical supports and braces — for injury prevention, recovery and a confident return to activity.",

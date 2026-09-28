@@ -13,48 +13,49 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write(self.style.WARNING('Creating Persian products and categories...'))
 
+        # name/description are English; name_fa/description_fa are Persian.
         categories_data = [
             {
-                'name': 'بریس و حمایت زانو',
-                'name_fa': 'بریس و حمایت زانو',
+                'name': 'Knee Braces & Supports',
+                'name_fa': 'بریس و ساپورت زانو',
                 'slug': 'knee-braces',
-                'description': 'بریس، اسلیو و حمایت‌های زانو',
-                'description_fa': 'بریس، اسلیو و حمایت‌های زانو برای آسیب‌های ورزشی و روزمره',
+                'description': 'Braces, sleeves and straps for sports injuries and everyday knee pain.',
+                'description_fa': 'بریس، اسلیو و زانوبند برای آسیب‌های ورزشی و دردهای روزمره زانو',
             },
             {
-                'name': 'حمایت مچ پا',
-                'name_fa': 'حمایت مچ پا',
+                'name': 'Ankle Supports',
+                'name_fa': 'ساپورت مچ پا',
                 'slug': 'ankle-supports',
-                'description': 'استابیلایزر و فشاری مچ پا',
-                'description_fa': 'محصولات حمایت و تثبیت مچ پا برای پیشگیری و بهبودی آسیب',
+                'description': 'Ankle stabilizers and compression sleeves for prevention and recovery.',
+                'description_fa': 'قوزک‌بند و اسلیو فشاری برای پیشگیری از پیچ‌خوردگی و بهبود آسیب',
             },
             {
-                'name': 'حمایت کمر',
-                'name_fa': 'حمایت کمر',
+                'name': 'Back Supports',
+                'name_fa': 'ساپورت کمر',
                 'slug': 'back-supports',
-                'description': 'حمایت‌های کمری و لیوزر',
-                'description_fa': 'بریس و حمایت کمری برای ورزشکاران و افراد دارای درد کمر',
+                'description': 'Lumbar braces and belts for athletes and everyday back pain.',
+                'description_fa': 'کمربند طبی و ساپورت کمری برای ورزشکاران و کاهش کمردرد',
             },
             {
-                'name': 'حمایت شانه',
-                'name_fa': 'حمایت شانه',
+                'name': 'Shoulder Supports',
+                'name_fa': 'ساپورت شانه',
                 'slug': 'shoulder-supports',
-                'description': 'حمایت چرخنده شانه و استابیلایزر',
-                'description_fa': 'محصولات حمایت شانه برای جلوگیری از آسیب و بهبودی',
+                'description': 'Shoulder braces and stabilizers for injury prevention and rehab.',
+                'description_fa': 'شانه‌بند و تثبیت‌کننده برای پیشگیری از آسیب و دوره توانبخشی',
             },
             {
-                'name': 'حمایت مچ دست و آرنج',
-                'name_fa': 'حمایت مچ دست و آرنج',
+                'name': 'Wrist & Elbow Supports',
+                'name_fa': 'ساپورت مچ دست و آرنج',
                 'slug': 'wrist-elbow',
-                'description': 'اسپلینت و فشاری مچ دست و آرنج',
-                'description_fa': 'حمایت‌های مچ دست و آرنج برای ورزش‌های رقیق‌کننده',
+                'description': 'Wrist splints and elbow supports for racket sports and daily strain.',
+                'description_fa': 'مچ‌بند و آرنج‌بند برای ورزش‌های راکتی، بدنسازی و فشارهای روزمره',
             },
             {
-                'name': 'لباس فشاری',
-                'name_fa': 'لباس فشاری',
+                'name': 'Compression & Recovery',
+                'name_fa': 'پوشاک فشاری و ریکاوری',
                 'slug': 'compression-wear',
-                'description': 'لباس‌های فشاری واستاه و حمایتی',
-                'description_fa': 'لباس‌های فشاری ورزشی برای بهبود گردش خون و جلوگیری از سفتی',
+                'description': 'Compression sleeves and recovery tools that boost circulation.',
+                'description_fa': 'اسلیو فشاری و ابزار ریکاوری برای بهبود گردش خون و کاهش گرفتگی عضلات',
             },
         ]
 

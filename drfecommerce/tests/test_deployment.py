@@ -37,6 +37,22 @@ def test_without_a_build_root_falls_back_to_api_index(tmp_path, settings):
 
 
 @pytest.mark.django_db
+def test_seed_category_images_fills_only_missing_images(settings, tmp_path):
+    from django.core.files.base import ContentFile
+
+    settings.MEDIA_ROOT = tmp_path
+    knee = Category.objects.create(name="Knee", slug="knee-braces")
+    back = Category.objects.create(name="Back", slug="back-supports")
+    back.image.save("uploaded.jpg", ContentFile(b"admin upload"), save=True)
+
+    call_command("seed_category_images", stdout=io.StringIO())
+    knee.refresh_from_db()
+    back.refresh_from_db()
+    assert knee.image.name.startswith("categories/knee-braces")
+    assert back.image.name.startswith("categories/uploaded")  # admin upload kept
+
+
+@pytest.mark.django_db
 def test_seed_demo_store_skips_when_products_exist():
     cat = Category.objects.create(name="C", slug="c")
     Product.objects.create(category=cat, name="P", slug="p", description="d", price=1)

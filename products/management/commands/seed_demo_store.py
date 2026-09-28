@@ -5,7 +5,7 @@ from products.models import Product
 
 
 class Command(BaseCommand):
-    help = "Load the Persian demo catalogue (products, images, sports) if the shop is empty"
+    help = "Load the Persian demo catalogue (products, images, categories, sports) if the shop is empty"
 
     def add_arguments(self, parser):
         parser.add_argument("--force", action="store_true", help="Seed even if products already exist")
@@ -15,7 +15,7 @@ class Command(BaseCommand):
             self.stdout.write("Products already exist; skipping demo seed.")
             return
 
-        for command in ("seed_persian_products", "seed_product_images", "seed_sports"):
+        for command in ("seed_persian_products", "seed_product_images", "seed_category_images", "seed_sports"):
             self.stdout.write(f"Running {command}...")
             call_command(command, stdout=self.stdout)
 
