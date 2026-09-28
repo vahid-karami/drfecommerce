@@ -1,125 +1,146 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import apiClient from '../api/client';
 import { ENDPOINTS } from '../api/endpoints';
-import { OrderSkeleton } from '../components/Skeletons';
 import { useToast } from '../context/ToastContext';
-import { formatDate } from '../utils/persianDate';
+import AccountLayout from '../components/AccountLayout';
+import Icon from '../components/Icon';
 import Price from '../components/Price';
+import { Skeleton } from '../components/Skeletons';
+import { formatDate } from '../utils/persianDate';
+import { orderStatus, paymentStatus, canPay } from '../utils/orderStatus';
+import { startPayment } from '../utils/payment';
+import { toPersianNumber } from '../hooks/useLanguage';
+import { usePageMeta } from '../utils/seo';
+
+const FILTERS = [
+  { key: 'all', fa: 'همه', en: 'All', test: () => true },
+  { key: 'unpaid', fa: 'در انتظار پرداخت', en: 'Awaiting payment', test: (o) => canPay(o) },
+  { key: 'active', fa: 'در جریان', en: 'In progress', test: (o) => o.payment_status === 'paid' && ['confirmed', 'processing', 'shipped'].includes(o.status) },
+  { key: 'delivered', fa: 'تحویل شده', en: 'Delivered', test: (o) => o.status === 'delivered' },
+  { key: 'cancelled', fa: 'لغو شده', en: 'Cancelled', test: (o) => o.status === 'cancelled' },
+];
 
 export default function Orders() {
   const { t, i18n } = useTranslation();
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const { success, error: showError } = useToast();
+  const lang = i18n.language === 'fa' ? 'fa' : 'en';
+  const num = (n) => (lang === 'fa' ? toPersianNumber(n) : String(n));
+  const navigate = useNavigate();
+  const { error: showError } = useToast();
+  const [orders, setOrders] = useState(null);
+  const [filter, setFilter] = useState('all');
+  const [paying, setPaying] = useState(null);
+
+  usePageMeta({ title: t('header.myOrders') });
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await apiClient.get(ENDPOINTS.orders);
-        setOrders(response.data);
-      } catch (error) {
-        console.error('Failed to fetch orders:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchOrders();
+    apiClient
+      .get(ENDPOINTS.orders)
+      .then((res) => setOrders(res.data))
+      .catch(() => setOrders([]));
   }, []);
 
-  const getStatusClass = (status) => {
-    const classes = {
-      pending: 'status-pending',
-      confirmed: 'status-confirmed',
-      processing: 'status-processing',
-      shipped: 'status-shipped',
-      delivered: 'status-delivered',
-      cancelled: 'status-cancelled',
-    };
-    return classes[status] || '';
-  };
-
-  const handleCancel = async (orderNumber) => {
-    if (!window.confirm(t('orders.cancelConfirm'))) return;
+  const handlePay = async (orderNumber) => {
+    setPaying(orderNumber);
     try {
-      await apiClient.post(ENDPOINTS.orderCancel(orderNumber));
-      setOrders(orders.map((o) =>
-        o.order_number === orderNumber ? { ...o, status: 'cancelled' } : o
-      ));
-      success('Order cancelled successfully');
-    } catch (error) {
-      showError(error.response?.data?.error || t('orders.cancelFailed'));
+      await startPayment({ orderNumber, gateway: 'zarinpal', navigate });
+    } catch (err) {
+      showError(err.response?.data?.error || t('payment.startFailed'));
+      setPaying(null);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="orders-page">
-        <div className="container">
-          <OrderSkeleton />
-        </div>
-      </div>
-    );
-  }
+  const counts = Object.fromEntries(FILTERS.map((f) => [f.key, (orders || []).filter(f.test).length]));
+  const visible = (orders || []).filter(FILTERS.find((f) => f.key === filter).test);
 
   return (
-    <div className="orders-page">
-      <h1>{t('orders.myOrders')}</h1>
-
-      {orders.length === 0 ? (
-        <div className="empty-orders">
-          <span className="empty-icon">📦</span>
+    <AccountLayout title={t('header.myOrders')}>
+      {orders === null ? (
+        <div className="order-list" aria-hidden="true">
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="order-row" style={{ height: 150 }} />)}
+        </div>
+      ) : orders.length === 0 ? (
+        <div className="empty-panel">
+          <Icon name="box" size={44} strokeWidth={1.4} />
           <h2>{t('orders.noOrders')}</h2>
           <p>{t('orders.noOrdersDesc')}</p>
           <Link to="/products" className="btn btn-primary">{t('cart.browseProducts')}</Link>
         </div>
       ) : (
-        <div className="orders-list">
-          {orders.map((order) => (
-            <div key={order.id} className="order-card">
-              <div className="order-header">
-                <div className="order-info">
-                  <span className="order-number">{t('orders.orderNumber', { number: order.order_number })}</span>
-                  <span className="order-date">
-                    {t('orders.placedOn', { date: formatDate(order.created_at, i18n.language) })}
-                  </span>
-                </div>
-                <span className={`order-status ${getStatusClass(order.status)}`}>
-                  {order.status_display}
-                </span>
-              </div>
+        <>
+          <div className="tab-row" role="tablist" aria-label={t('orders.filter', 'فیلتر سفارش‌ها')}>
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                role="tab"
+                aria-selected={filter === f.key}
+                className={`tab ${filter === f.key ? 'active' : ''}`}
+                onClick={() => setFilter(f.key)}
+              >
+                {lang === 'fa' ? f.fa : f.en}
+                <span className="tab-count">{num(counts[f.key])}</span>
+              </button>
+            ))}
+          </div>
 
-              <div className="order-items">
-                {order.items.map((item, idx) => (
-                  <div key={idx} className="order-item">
-                    <span>{item.product_name}</span>
-                    <span>{t('orders.quantity')}: {item.quantity}</span>
-                    <span><Price amount={item.subtotal} /></span>
-                  </div>
-                ))}
-              </div>
+          {visible.length === 0 ? (
+            <p className="muted empty-inline">{t('orders.noneInFilter', 'سفارشی در این دسته نیست.')}</p>
+          ) : (
+            <ul className="order-list">
+              {visible.map((order) => {
+                const status = orderStatus(order.status, lang);
+                const pay = paymentStatus(order.payment_status, lang);
+                const itemCount = order.items.reduce((n, i) => n + i.quantity, 0);
+                return (
+                  <li key={order.id} className="order-row">
+                    <div className="order-row-head">
+                      <div>
+                        <Link to={`/orders/${order.order_number}`} className="order-row-number" dir="ltr">{order.order_number}</Link>
+                        <span className="muted">{formatDate(order.created_at, lang)}</span>
+                      </div>
+                      <div className="order-badges">
+                        <span className={`status-pill tone-${status.tone}`}>{status.label}</span>
+                        {order.status !== 'cancelled' && <span className={`status-pill tone-${pay.tone}`}>{pay.label}</span>}
+                      </div>
+                    </div>
 
-              <div className="order-footer">
-                <div className="order-total">
-                  <span>{t('cart.total')}:</span>
-                  <span className="total-amount"><Price amount={order.total} /></span>
-                </div>
-                <div className="order-actions">
-                  {(order.status === 'pending' || order.status === 'confirmed') && (
-                    <button
-                      onClick={() => handleCancel(order.order_number)}
-                      className="btn btn-outline btn-sm"
-                    >
-                      {t('orders.cancelOrder')}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+                    <div className="order-row-items">
+                      {order.items.slice(0, 4).map((item) => (
+                        <span key={item.id} className="order-thumb" title={item.product_name}>
+                          {item.product_image ? <img src={item.product_image} alt={item.product_name} /> : <Icon name="box" size={22} />}
+                          {item.quantity > 1 && <span className="summary-qty">{num(item.quantity)}</span>}
+                        </span>
+                      ))}
+                      {order.items.length > 4 && <span className="order-thumb more">+{num(order.items.length - 4)}</span>}
+                      <span className="order-row-summary">
+                        {order.items.map((i) => i.product_name).slice(0, 2).join('، ')}
+                        {order.items.length > 2 ? ' …' : ''}
+                      </span>
+                    </div>
+
+                    <div className="order-row-foot">
+                      <span>
+                        {t('orders.itemsCount', '{{count}} کالا', { count: num(itemCount) })} · <strong><Price amount={order.total} /></strong>
+                      </span>
+                      <div className="order-row-actions">
+                        {canPay(order) && (
+                          <button className="btn btn-primary btn-sm" onClick={() => handlePay(order.order_number)} disabled={paying === order.order_number}>
+                            <Icon name="card" size={16} /> {t('payment.payAmount', 'پرداخت')}
+                          </button>
+                        )}
+                        <Link to={`/orders/${order.order_number}`} className="btn btn-outline btn-sm">
+                          {t('orders.details', 'جزئیات سفارش')}
+                        </Link>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </>
       )}
-    </div>
+    </AccountLayout>
   );
 }

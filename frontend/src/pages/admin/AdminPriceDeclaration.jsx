@@ -1,188 +1,154 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import apiClient from '../../api/client';
 import { ENDPOINTS } from '../../api/endpoints';
 import { useToast } from '../../context/ToastContext';
 import Price from '../../components/Price';
+import Icon from '../../components/Icon';
+import { useCategories } from '../../utils/catalog';
+import { fetchAllPages } from '../../utils/fetchAll';
+import { toEnglishDigits } from '../../utils/digits';
+import { toPersianNumber } from '../../hooks/useLanguage';
+import { usePageMeta } from '../../utils/seo';
+
+// Mirrors products.views.bulk_price_update: round to 1,000 Toman, never down to zero.
+function adjust(price, pct) {
+  const next = Number(price) * (1 + pct / 100);
+  const rounded = Math.round(next / 1000) * 1000;
+  return rounded > 0 ? rounded : Math.round(next * 100) / 100;
+}
 
 export default function AdminPriceDeclaration() {
-  const [categories, setCategories] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language === 'fa' ? 'fa' : 'en';
+  const num = (n) => (lang === 'fa' ? toPersianNumber(n) : String(n));
+  const { success, error: showError } = useToast();
+  const categories = useCategories();
+  const [products, setProducts] = useState(null);
+  const [categoryId, setCategoryId] = useState('');
   const [percentage, setPercentage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { addToast: showToast } = useToast();
+  const [applying, setApplying] = useState(false);
 
-  useEffect(() => {
-    fetchCategories();
+  usePageMeta({ title: t('admin.priceList', 'اعلامیه قیمت') });
+
+  const load = useCallback(() => {
+    fetchAllPages(ENDPOINTS.adminProducts)
+      .then(setProducts)
+      .catch(() => setProducts([]));
   }, []);
 
-  const fetchCategories = async () => {
-    try {
-      const res = await apiClient.get(ENDPOINTS.categories);
-      setCategories(res.data.results || res.data);
-    } catch (err) {
-      showToast('Failed to load categories', 'error');
-    }
-  };
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  const handleCategorySelect = async (e) => {
-    const catId = e.target.value;
-    setSelectedCategory(catId);
-    
-    if (!catId) {
-      setProducts([]);
-      return;
-    }
+  const pct = parseFloat(toEnglishDigits(percentage));
+  const validPct = Number.isFinite(pct) && pct > -100 && pct !== 0;
+  const category = categories.find((c) => String(c.id) === categoryId);
+  const rows = (products || []).filter((p) => !categoryId || String(p.category) === categoryId);
 
-    setLoading(true);
+  const handleApply = async () => {
+    if (!validPct) return;
+    const scope = category ? `«${category.name_fa || category.name}»` : t('admin.allProducts', 'همه محصولات');
+    if (!window.confirm(t('admin.applyConfirm', 'قیمت {{scope}} {{pct}}٪ تغییر کند؟', { scope, pct: num(pct) }))) return;
+    setApplying(true);
     try {
-      // Find category slug to fetch its products
-      const cat = categories.find(c => c.id.toString() === catId);
-      if (cat) {
-        const res = await apiClient.get(ENDPOINTS.adminProducts, {
-          params: { category: cat.slug }
-        });
-        setProducts(res.data.results || res.data);
-      }
+      const { data } = await apiClient.post(ENDPOINTS.adminBulkPriceUpdate, { category_id: categoryId || null, percentage: pct });
+      success(t('admin.pricesUpdated', 'قیمت {{count}} محصول به‌روز شد', { count: num(data.updated_count) }));
+      setPercentage('');
+      load();
     } catch (err) {
-      showToast('Failed to load products', 'error');
+      showError(err.response?.data?.error || t('admin.updateFailed', 'به‌روزرسانی انجام نشد'));
     } finally {
-      setLoading(false);
+      setApplying(false);
     }
   };
 
-  const calculateNewPrice = (currentPrice) => {
-    if (!currentPrice || !percentage) return currentPrice;
-    const val = parseFloat(percentage);
-    if (isNaN(val)) return currentPrice;
-    
-    const newPrice = parseFloat(currentPrice) * (1 + (val / 100));
-    const rounded = Math.round(newPrice / 1000) * 1000;
-    // Mirrors the backend: small prices are not rounded down to zero.
-    return rounded > 0 ? rounded : Math.round(newPrice * 100) / 100;
-  };
-
-  const handleSubmit = async () => {
-    if (!percentage) {
-      showToast('Please enter a percentage', 'warning');
-      return;
-    }
-
-    if (!window.confirm('Are you sure you want to apply this price update?')) return;
-
-    setLoading(true);
-    try {
-      const res = await apiClient.post(ENDPOINTS.adminBulkPriceUpdate, {
-        category_id: selectedCategory || null,
-        percentage: parseFloat(percentage)
-      });
-      showToast(res.data.message, 'success');
-      // Refresh products
-      handleCategorySelect({ target: { value: selectedCategory } });
-    } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to update prices', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
+  const today = new Intl.DateTimeFormat(lang === 'fa' ? 'fa-IR' : 'en-US', { dateStyle: 'long' }).format(new Date());
 
   return (
-    <div className="admin-price-declaration print-container">
-      <div className="admin-header hide-on-print">
-        <h1>اعلامیه قیمت (Price Declaration)</h1>
-        <div className="header-actions">
-          <button onClick={handlePrint} className="btn btn-outline mr-2">
-            🖨 چاپ اعلامیه (Print)
-          </button>
-          <button onClick={handleSubmit} disabled={loading || !percentage} className="btn btn-primary">
-            {loading ? 'Updating...' : 'اعمال تغییرات (Apply)'}
-          </button>
+    <div className="admin-page price-list-page">
+      <header className="admin-page-head hide-on-print">
+        <div>
+          <h1>{t('admin.priceList', 'اعلامیه قیمت')}</h1>
+          <p className="muted">{t('admin.priceListHint', 'تغییر گروهی قیمت‌ها و چاپ فهرست قیمت برای فروشگاه')}</p>
         </div>
-      </div>
+        <button onClick={() => window.print()} className="btn btn-outline">
+          <Icon name="box" size={18} /> {t('admin.print', 'چاپ فهرست قیمت')}
+        </button>
+      </header>
 
-      <div className="controls-panel card hide-on-print mb-6 p-4">
-        <div className="form-row">
-          <div className="form-group mb-0">
-            <label className="form-label">دسته بندی (Category)</label>
-            <select
-              value={selectedCategory}
-              onChange={handleCategorySelect}
-              className="form-select"
-            >
-              <option value="">All Categories</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name_fa || cat.name}</option>
-              ))}
+      <section className="admin-card hide-on-print">
+        <div className="form-grid">
+          <div className="form-group">
+            <label className="form-label" htmlFor="pl-category">{t('product.category')}</label>
+            <select id="pl-category" value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="form-select">
+              <option value="">{t('admin.allProducts', 'همه محصولات')}</option>
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name_fa || c.name}</option>)}
             </select>
           </div>
-          <div className="form-group mb-0">
-            <label className="form-label">درصد تغییر (Percentage %)</label>
+          <div className="form-group">
+            <label className="form-label" htmlFor="pl-pct">{t('admin.changePercent', 'درصد تغییر')}</label>
             <input
-              type="number"
-              step="0.1"
-              placeholder="e.g. 15 for +15%, -10 for -10%"
+              id="pl-pct"
               value={percentage}
               onChange={(e) => setPercentage(e.target.value)}
               className="form-input"
+              inputMode="decimal"
               dir="ltr"
+              placeholder="+15 / -10"
             />
           </div>
+          <div className="form-group apply-cell">
+            <button onClick={handleApply} disabled={!validPct || applying} className="btn btn-primary btn-full">
+              {applying ? t('common.loading') : t('admin.applyPrices', 'اعمال روی {{count}} محصول', { count: num(rows.length) })}
+            </button>
+          </div>
         </div>
-        <p className="text-sm text-neutral-500 mt-2">
-          Enter a positive number to increase prices, or a negative number to decrease.
-          Prices will be automatically rounded to the nearest 1,000 Toman.
+        <p className="muted card-hint">
+          {t('admin.pctHint', 'عدد مثبت برای افزایش و منفی برای کاهش قیمت. قیمت‌ها به نزدیک‌ترین ۱٬۰۰۰ تومان گرد می‌شوند. ستون «قیمت جدید» پیش‌نمایش است و تا زمان اعمال ذخیره نمی‌شود.')}
         </p>
+      </section>
+
+      <div className="print-only print-title">
+        <h2>{t('admin.printTitle', 'فهرست قیمت محصولات اسپورت‌مد')}</h2>
+        <p>{today}{category ? ` — ${category.name_fa || category.name}` : ''}</p>
       </div>
 
-      <div className="print-header show-on-print-only">
-        <h2>لیست قیمت محصولات (Price List)</h2>
-        <p>Date: {new Date().toLocaleDateString('fa-IR')}</p>
-        {selectedCategory && (
-          <p>Category: {categories.find(c => c.id.toString() === selectedCategory)?.name_fa}</p>
-        )}
-      </div>
-
-      {loading && products.length === 0 ? (
-        <p>Loading...</p>
-      ) : (
-        <div className="table-responsive">
-          <table className="admin-table price-table">
-            <thead>
-              <tr>
-                <th>نام کالا (Product)</th>
-                <th>دسته (Category)</th>
-                <th>قیمت فعلی (Current)</th>
-                <th className="new-price-col">قیمت جدید (New)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map(product => {
-                const newPrice = calculateNewPrice(product.price);
-                const isChanged = newPrice !== parseFloat(product.price);
-                return (
-                  <tr key={product.id}>
-                    <td>{product.name_fa || product.name}</td>
-                    <td>{product.category_name}</td>
-                    <td><Price amount={product.price} /></td>
-                    <td className={`new-price-col ${isChanged ? 'text-success font-bold' : ''}`}>
-                      <Price amount={newPrice} />
-                    </td>
-                  </tr>
-                );
-              })}
-              {products.length === 0 && (
+      <section className="admin-card flush">
+        {products === null ? (
+          <div className="loading"><div className="spinner" /></div>
+        ) : (
+          <div className="table-wrap">
+            <table className="data-table price-table">
+              <thead>
                 <tr>
-                  <td colSpan="4" className="text-center py-4">No products found.</td>
+                  <th>{t('admin.product', 'محصول')}</th>
+                  <th>{t('product.category')}</th>
+                  <th>{t('admin.currentPrice', 'قیمت فعلی')}</th>
+                  {validPct && <th className="hide-on-print">{t('admin.newPrice', 'قیمت جدید')}</th>}
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {rows.map((p) => (
+                  <tr key={p.id}>
+                    <td>{p.name_fa || p.name}</td>
+                    <td>{p.category_name_fa || p.category_name}</td>
+                    <td><Price amount={p.price} /></td>
+                    {validPct && (
+                      <td className={`hide-on-print ${pct > 0 ? 'text-ok' : 'text-bad'}`}>
+                        <strong><Price amount={adjust(p.price, pct)} /></strong>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+                {rows.length === 0 && (
+                  <tr><td colSpan={4} className="muted">{t('products.noProductsFound')}</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

@@ -1,5 +1,10 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
+// Django's own admin (image uploads etc.). In dev it lives on the Django server, not behind Vite.
+export const DJANGO_ADMIN_URL = import.meta.env.DEV
+  ? `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/admin/`
+  : '/admin/';
+
 export const ENDPOINTS = {
   sendOTP: `${API_BASE_URL}/auth/otp/send/`,
   verifyOTP: `${API_BASE_URL}/auth/otp/verify/`,
@@ -32,6 +37,9 @@ export const ENDPOINTS = {
   orderCancel: (id) => `${API_BASE_URL}/orders/${id}/cancel/`,
   orderPay: (id) => `${API_BASE_URL}/orders/${id}/pay/`,
   paymentVerify: `${API_BASE_URL}/orders/payment/verify/`,
+  adminStats: `${API_BASE_URL}/orders/admin/stats/`,
+  adminOrders: `${API_BASE_URL}/orders/admin/`,
+  adminOrderUpdate: (id) => `${API_BASE_URL}/orders/admin/${id}/`,
 
   productReviews: (slug) => `${API_BASE_URL}/reviews/product/${slug}/`,
   reviewCreate: (slug) => `${API_BASE_URL}/reviews/product/${slug}/create/`,

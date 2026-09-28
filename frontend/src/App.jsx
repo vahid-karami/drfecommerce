@@ -26,6 +26,7 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
 const AdminCategories = lazy(() => import('./pages/admin/AdminCategories'));
 const AdminPriceDeclaration = lazy(() => import('./pages/admin/AdminPriceDeclaration'));
+const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'));
 
 function App() {
   const { i18n } = useTranslation();
@@ -63,6 +64,7 @@ function App() {
                       
                       <Route path="/admin-portal" element={<AdminLayout />}>
                         <Route index element={<AdminDashboard />} />
+                        <Route path="orders" element={<AdminOrders />} />
                         <Route path="products" element={<AdminProducts />} />
                         <Route path="categories" element={<AdminCategories />} />
                         <Route path="price-declaration" element={<AdminPriceDeclaration />} />

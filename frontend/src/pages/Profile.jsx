@@ -1,254 +1,153 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import AccountLayout from '../components/AccountLayout';
+import Icon from '../components/Icon';
 import { formatDate } from '../utils/persianDate';
-import {
-  IRANIAN_PROVINCES,
-  validateIranianPostalCode,
-} from '../utils/iranianAddress';
+import { IRANIAN_PROVINCES, validateIranianPostalCode } from '../utils/iranianAddress';
+import { toEnglishDigits } from '../utils/digits';
+import { toPersianNumber } from '../hooks/useLanguage';
+import { usePageMeta } from '../utils/seo';
+
+const EMPTY = { first_name: '', last_name: '', email: '', province: '', city: '', postal_code: '', address: '' };
 
 export default function Profile() {
   const { t, i18n } = useTranslation();
-  const { user, updateProfile, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+  const lang = i18n.language === 'fa' ? 'fa' : 'en';
+  const { user, updateProfile } = useAuth();
   const { success, error: showError } = useToast();
-  const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    address: '',
-    province: '',
-    city: '',
-    postal_code: '',
-  });
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [form, setForm] = useState(EMPTY);
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  usePageMeta({ title: t('header.myAccount') });
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-    if (user) {
-      setFormData({
-        first_name: user.first_name || '',
-        last_name: user.last_name || '',
-        email: user.email || '',
-        address: user.address || '',
-        province: user.province || '',
-        city: user.city || '',
-        postal_code: user.postal_code || '',
-      });
-    }
-  }, [user, isAuthenticated, navigate]);
+    if (!user) return;
+    setForm({
+      first_name: user.first_name || '',
+      last_name: user.last_name || '',
+      email: user.email || '',
+      province: user.province || '',
+      city: user.city || '',
+      postal_code: user.postal_code || '',
+      address: user.address || '',
+    });
+  }, [user]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name === 'province') {
-      const selectedProv = IRANIAN_PROVINCES.find((p) => p.name === value || p.id === value);
-      const cities = selectedProv ? selectedProv.cities : [];
-      setFormData((prev) => ({
-        ...prev,
-        province: value,
-        city: cities.length > 0 ? cities[0] : '',
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+  const province = IRANIAN_PROVINCES.find((p) => p.name === form.province);
+  const dirty = user && Object.keys(EMPTY).some((k) => (user[k] || '') !== form[k]);
+
+  const setField = (name, value) => {
+    setForm((f) => ({ ...f, [name]: value }));
+    setErrors((e) => ({ ...e, [name]: undefined }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.postal_code && !validateIranianPostalCode(formData.postal_code)) {
-      const errMsg = t('checkout.invalidPostalCode', 'Postal code must be 10 digits');
-      setMessage(errMsg);
-      showError(errMsg);
-      return;
-    }
-    setLoading(true);
-    setMessage('');
+    const next = {};
+    if (form.postal_code && !validateIranianPostalCode(form.postal_code)) next.postal_code = t('checkout.invalidPostalCode');
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) next.email = t('profile.invalidEmail', 'ایمیل معتبر نیست');
+    setErrors(next);
+    if (Object.keys(next).length) return;
+
+    setSaving(true);
     try {
-      await updateProfile(formData);
+      await updateProfile({ ...form, postal_code: toEnglishDigits(form.postal_code).replace(/[\s-]/g, '') });
       success(t('profile.updateSuccess'));
-    } catch (error) {
-      const errorMessage = error.response?.data?.error || t('profile.updateFailed');
-      setMessage(errorMessage);
-      showError(errorMessage);
+    } catch (err) {
+      const data = err.response?.data;
+      if (data && typeof data === 'object' && !data.error) {
+        setErrors(Object.fromEntries(Object.entries(data).map(([k, v]) => [k, [].concat(v).join(' ')])));
+      }
+      showError(data?.error || t('profile.updateFailed'));
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  if (!isAuthenticated) return null;
+  const field = (name, label, props = {}) => (
+    <div className="form-group">
+      <label className="form-label" htmlFor={name}>{label}</label>
+      <input
+        id={name}
+        name={name}
+        value={form[name]}
+        onChange={(e) => setField(name, e.target.value)}
+        className={`form-input ${errors[name] ? 'has-error' : ''}`}
+        aria-invalid={Boolean(errors[name])}
+        {...props}
+      />
+      {errors[name] && <p className="field-error">{errors[name]}</p>}
+    </div>
+  );
 
   return (
-    <div className="profile-page">
-      <h1>{t('profile.myProfile')}</h1>
-
-      <div className="profile-content">
-        <div className="profile-card">
-          <div className="profile-header">
-            <div className="avatar">
-              {user?.first_name ? user.first_name[0].toUpperCase() : user?.phone[0]}
-            </div>
-            <div className="profile-info">
-              <h2>{user?.first_name} {user?.last_name}</h2>
-              <p>{user?.phone}</p>
+    <AccountLayout title={t('header.myAccount')}>
+      <form onSubmit={handleSubmit} className="account-sections" noValidate>
+        <section className="form-card">
+          <h2><Icon name="user" size={20} /> {t('profile.personalInfo', 'اطلاعات شخصی')}</h2>
+          <div className="form-grid two">
+            {field('first_name', t('auth.firstName'), { autoComplete: 'given-name' })}
+            {field('last_name', t('auth.lastName'), { autoComplete: 'family-name' })}
+            {field('email', t('profile.email', 'ایمیل'), { type: 'email', dir: 'ltr', autoComplete: 'email', placeholder: 'name@example.com' })}
+            <div className="form-group">
+              <span className="form-label">{t('auth.phoneNumber')}</span>
+              <p className="readonly-field" dir="ltr">{lang === 'fa' ? toPersianNumber(user?.phone || '') : user?.phone}</p>
             </div>
           </div>
+        </section>
 
-          <form onSubmit={handleSubmit} className="profile-form">
-            {message && (
-              <div className={`message ${message.includes('success') || message.includes('موفق') ? 'success' : 'error'}`}>
-                {message}
-              </div>
-            )}
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="first_name">{t('auth.firstName')}</label>
-                <input
-                  type="text"
-                  id="first_name"
-                  name="first_name"
-                  value={formData.first_name}
-                  onChange={handleChange}
-                  className="form-input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="last_name">{t('auth.lastName')}</label>
-                <input
-                  type="text"
-                  id="last_name"
-                  name="last_name"
-                  value={formData.last_name}
-                  onChange={handleChange}
-                  className="form-input"
-                />
-              </div>
-            </div>
-
+        <section className="form-card">
+          <h2><Icon name="truck" size={20} /> {t('profile.defaultAddress', 'نشانی پیش‌فرض ارسال')}</h2>
+          <p className="muted card-hint">{t('profile.addressHint', 'این نشانی هنگام خرید به‌صورت خودکار پر می‌شود.')}</p>
+          <div className="form-grid">
             <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="form-input"
-              />
+              <label className="form-label" htmlFor="province">{t('checkout.state')}</label>
+              <select
+                id="province"
+                value={form.province}
+                onChange={(e) => {
+                  setField('province', e.target.value);
+                  setField('city', '');
+                }}
+                className="form-select"
+              >
+                <option value="">{t('checkout.selectProvince')}</option>
+                {IRANIAN_PROVINCES.map((p) => (
+                  <option key={p.id} value={p.name}>{lang === 'fa' ? p.name : p.name_en}</option>
+                ))}
+              </select>
             </div>
+            {field('city', t('checkout.city'), { list: 'profile-cities', autoComplete: 'address-level2' })}
+            <datalist id="profile-cities">
+              {(province?.cities || []).map((c) => <option key={c} value={c} />)}
+            </datalist>
+            {field('postal_code', t('checkout.zipCode'), { inputMode: 'numeric', dir: 'ltr', maxLength: 12, placeholder: '1234567890' })}
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="address">{t('checkout.address')}</label>
+            <textarea
+              id="address"
+              value={form.address}
+              onChange={(e) => setField('address', e.target.value)}
+              className="form-textarea"
+              rows={3}
+              placeholder={t('checkout.addressPlaceholder', 'خیابان، کوچه، پلاک، واحد')}
+            />
+          </div>
+        </section>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="province">{t('checkout.state', 'Province')}</label>
-                <select
-                  id="province"
-                  name="province"
-                  value={formData.province}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="">{t('checkout.selectProvince', 'Select Province')}</option>
-                  {IRANIAN_PROVINCES.map((prov) => (
-                    <option key={prov.id} value={prov.name}>
-                      {i18n.language === 'fa' ? prov.name : prov.name_en}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="city">{t('checkout.city', 'City')}</label>
-                {formData.province ? (
-                  <select
-                    id="city"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    className="form-input"
-                  >
-                    <option value="">{t('checkout.selectCity', 'Select City')}</option>
-                    {(IRANIAN_PROVINCES.find((p) => p.name === formData.province || p.id === formData.province)?.cities || []).map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    id="city"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    className="form-input"
-                  />
-                )}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="address">{t('checkout.address', 'Address')}</label>
-              <textarea
-                id="address"
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                className="form-input"
-                rows={3}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="postal_code">{t('checkout.zipCode', 'Postal Code')}</label>
-              <input
-                type="text"
-                id="postal_code"
-                name="postal_code"
-                value={formData.postal_code}
-                onChange={handleChange}
-                maxLength={10}
-                placeholder="1234567890"
-                className="form-input"
-              />
-            </div>
-
-            <button type="submit" disabled={loading} className="btn btn-primary">
-              {loading ? t('common.loading') : t('profile.saveChanges')}
-            </button>
-          </form>
+        <div className="account-save">
+          <p className="muted">
+            {t('profile.memberSince')} {formatDate(user?.date_joined, lang)}
+          </p>
+          <button type="submit" className="btn btn-primary btn-lg" disabled={saving || !dirty}>
+            {saving ? t('common.loading') : t('profile.saveChanges')}
+          </button>
         </div>
-
-        <div className="profile-sidebar">
-          <div className="sidebar-card">
-            <h3>{t('profile.quickLinks')}</h3>
-            <Link to="/orders" className="sidebar-link">
-              <span>📦</span> {t('header.myOrders')}
-            </Link>
-            <Link to="/cart" className="sidebar-link">
-              <span>🛒</span> {t('common.cart')}
-            </Link>
-          </div>
-
-          <div className="sidebar-card">
-            <h3>{t('profile.accountDetails')}</h3>
-            <div className="detail-row">
-              <span>{t('auth.phoneNumber')}</span>
-              <span>{user?.phone}</span>
-            </div>
-            <div className="detail-row">
-              <span>{t('profile.memberSince')}</span>
-              <span>{formatDate(user?.date_joined, i18n.language)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      </form>
+    </AccountLayout>
   );
 }

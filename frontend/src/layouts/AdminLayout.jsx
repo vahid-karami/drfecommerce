@@ -1,38 +1,66 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../context/AuthContext';
+import { DJANGO_ADMIN_URL } from '../api/endpoints';
+import Icon from '../components/Icon';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function AdminLayout() {
   const { t } = useTranslation();
-  const location = useLocation();
+  const { user, isAuthenticated, loading } = useAuth();
 
-  const navItems = [
-    { path: '/admin-portal', label: 'Dashboard', icon: '📊' },
-    { path: '/admin-portal/products', label: 'Products', icon: '📦' },
-    { path: '/admin-portal/categories', label: 'Categories', icon: '📂' },
-    { path: '/admin-portal/orders', label: 'Orders', icon: '🛒' },
-    { path: '/admin-portal/price-declaration', label: 'اعلامیه قیمت (Price List)', icon: '📝' },
+  if (loading) return <LoadingSpinner />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+
+  // The API enforces staff permissions too; this just keeps customers out of the UI.
+  if (!user?.is_staff) {
+    return (
+      <div className="container">
+        <div className="empty-panel">
+          <Icon name="shield" size={44} strokeWidth={1.4} />
+          <h2>{t('admin.noAccess', 'دسترسی به پنل مدیریت ندارید')}</h2>
+          <p>{t('admin.noAccessText', 'این بخش فقط برای کارکنان فروشگاه است.')}</p>
+          <Link to="/" className="btn btn-primary">{t('common.home')}</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const items = [
+    { to: '/admin-portal', end: true, icon: 'filter', label: t('admin.dashboard', 'داشبورد') },
+    { to: '/admin-portal/orders', icon: 'box', label: t('admin.orders', 'سفارش‌ها') },
+    { to: '/admin-portal/products', icon: 'bag', label: t('admin.products', 'محصولات') },
+    { to: '/admin-portal/categories', icon: 'menu', label: t('admin.categories', 'دسته‌بندی‌ها') },
+    { to: '/admin-portal/price-declaration', icon: 'card', label: t('admin.priceList', 'اعلامیه قیمت') },
   ];
 
   return (
-    <div className="admin-portal-layout">
-      <aside className="admin-sidebar">
-        <div className="admin-sidebar-header">
-          <h2>Admin Portal</h2>
+    <div className="admin-shell">
+      <aside className="admin-side">
+        <div className="admin-side-head">
+          <span className="admin-side-title">{t('admin.title', 'پنل مدیریت')}</span>
+          <span className="admin-side-user">{user.first_name || user.username || user.phone}</span>
         </div>
-        <nav className="admin-sidebar-nav">
-          {navItems.map(item => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`admin-nav-link ${location.pathname === item.path ? 'active' : ''}`}
-            >
-              <span className="nav-icon">{item.icon}</span>
-              {item.label}
-            </Link>
+        <nav className="admin-side-nav" aria-label={t('admin.title', 'پنل مدیریت')}>
+          {items.map((item) => (
+            <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => `admin-link ${isActive ? 'active' : ''}`}>
+              <Icon name={item.icon} size={20} />
+              <span>{item.label}</span>
+            </NavLink>
           ))}
         </nav>
+        <div className="admin-side-foot">
+          <a href={DJANGO_ADMIN_URL} target="_blank" rel="noreferrer" className="admin-link subtle">
+            <Icon name="shield" size={18} />
+            <span>{t('admin.djangoAdmin', 'مدیریت پیشرفته (تصاویر و…)')}</span>
+          </a>
+          <Link to="/" className="admin-link subtle">
+            <Icon name="arrowLeft" size={18} className="flip-ltr" />
+            <span>{t('admin.backToShop', 'بازگشت به فروشگاه')}</span>
+          </Link>
+        </div>
       </aside>
-      <main className="admin-main-content">
+      <main className="admin-content">
         <Outlet />
       </main>
     </div>

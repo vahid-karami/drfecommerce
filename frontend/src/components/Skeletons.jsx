@@ -61,32 +61,3 @@ export function CartSkeleton() {
     </div>
   );
 }
-
-export function OrderSkeleton() {
-  return (
-    <div className="orders-page">
-      <div className="container">
-        <Skeleton style={{ width: '200px', height: '2rem', marginBottom: '2rem' }} />
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="order-card">
-            <div className="order-header">
-              <Skeleton style={{ width: '150px', height: '1.25rem' }} />
-              <Skeleton style={{ width: '100px', height: '1rem' }} />
-            </div>
-            <div className="order-body">
-              {[1, 2].map((j) => (
-                <div key={j} className="order-item">
-                  <Skeleton style={{ width: '60px', height: '60px' }} />
-                  <div className="order-item-details">
-                    <Skeleton style={{ width: '180px', height: '1rem', marginBottom: '0.5rem' }} />
-                    <Skeleton style={{ width: '80px', height: '0.875rem' }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}

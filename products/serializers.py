@@ -163,6 +163,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
 class ProductAdminSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source="category.name", read_only=True)
+    category_name_fa = serializers.CharField(source="category.name_fa", read_only=True)
+    primary_image = serializers.SerializerMethodField()
     margin = serializers.SerializerMethodField()
     margin_percent = serializers.SerializerMethodField()
 
@@ -177,6 +179,8 @@ class ProductAdminSerializer(serializers.ModelSerializer):
             "description_fa",
             "category",
             "category_name",
+            "category_name_fa",
+            "primary_image",
             "price",
             "price_irr",
             "cost",
@@ -199,6 +203,10 @@ class ProductAdminSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at", "in_stock"]
+
+    def get_primary_image(self, obj):
+        image = sorted(obj.images.all(), key=lambda i: (not i.is_primary, -i.created_at.timestamp()))
+        return image[0].image.url if image else None
 
     def get_margin(self, obj):
         cost = obj.cost or 0

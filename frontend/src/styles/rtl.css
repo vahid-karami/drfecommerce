@@ -5,44 +5,8 @@
   text-align: right;
 }
 
-[dir="rtl"] .header-actions {
-  flex-direction: row-reverse;
-}
-
 [dir="rtl"] .form-row {
   direction: rtl;
-}
-
-[dir="rtl"] .order-card {
-  direction: rtl;
-}
-
-[dir="rtl"] .order-header {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .order-item {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .order-footer {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .profile-content {
-  direction: rtl;
-}
-
-[dir="rtl"] .profile-header {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .sidebar-link {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .detail-row {
-  flex-direction: row-reverse;
 }
 
 [dir="rtl"] .favorites-header {
@@ -52,8 +16,6 @@
 [dir="rtl"] .auth-card {
   direction: rtl;
 }
-
-
 
 [dir="rtl"] .guides-grid {
   direction: rtl;

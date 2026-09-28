@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BODY_PARTS } from '../utils/bodyParts';
 import Icon from './Icon';
@@ -7,8 +7,12 @@ import Logo from './Logo';
 export default function Footer() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language === 'fa' ? 'fa' : 'en';
+  const { pathname } = useLocation();
   // Solar Hijri year for Persian (e.g. ۱۴۰۵), Gregorian otherwise.
   const year = new Intl.DateTimeFormat(lang === 'fa' ? 'fa-IR' : 'en-US', { year: 'numeric' }).format(new Date());
+
+  // The admin portal is a work area; no shop footer there.
+  if (pathname.startsWith('/admin-portal')) return null;
 
   return (
     <footer className="site-footer">
