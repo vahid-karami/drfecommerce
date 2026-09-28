@@ -263,7 +263,14 @@
     "clearCart": "خالی کردن سبد",
     "addedToCart": "به سبد خرید اضافه شد!",
     "addFailed": "افزودن به سبد خرید ناموفق بود",
-    "quantity": "تعداد"
+    "quantity": "تعداد",
+    "updateFailed": "به‌روزرسانی سبد انجام نشد",
+    "itemRemoved": "«{{name}}» از سبد حذف شد",
+    "clearConfirm": "همه کالاها از سبد حذف شوند؟",
+    "cleared": "سبد خرید خالی شد",
+    "itemsCount": "{{count}} کالا",
+    "yourSavings": "سود شما از خرید",
+    "remove": "حذف"
   },
   "checkout": {
     "title": "تکمیل خرید",

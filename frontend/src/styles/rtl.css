@@ -9,19 +9,6 @@
   flex-direction: row-reverse;
 }
 
-[dir="rtl"] .cart-layout {
-  direction: rtl;
-}
-
-[dir="rtl"] .cart-item {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .cart-summary {
-  left: auto;
-  right: 0;
-}
-
 [dir="rtl"] .checkout-content {
   direction: rtl;
 }
@@ -135,6 +122,4 @@
     direction: rtl;
   }
 
-  [dir="rtl"] .cart-item {
-    flex-wrap: wrap;
-  }}
+  }

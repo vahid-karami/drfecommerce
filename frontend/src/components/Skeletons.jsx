@@ -40,26 +40,23 @@ export function ProductDetailSkeleton() {
 
 export function CartSkeleton() {
   return (
-    <div className="cart-page">
-      <div className="container">
-        <Skeleton style={{ width: '200px', height: '2rem', marginBottom: '2rem' }} />
-        <div className="cart-layout">
-          <div className="cart-items">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="cart-item">
-                <Skeleton style={{ width: '120px', height: '120px' }} />
-                <div className="cart-item-details">
-                  <Skeleton style={{ width: '200px', height: '1.25rem', marginBottom: '0.5rem' }} />
-                  <Skeleton style={{ width: '100px', height: '1rem' }} />
-                </div>
-                <Skeleton style={{ width: '80px', height: '2rem' }} />
+    <div className="cart-page" aria-hidden="true">
+      <Skeleton style={{ width: '160px', height: '0.8rem', margin: '1.5rem 0 1.25rem' }} />
+      <Skeleton style={{ width: '220px', height: '2.2rem', marginBottom: '2rem' }} />
+      <div className="cart-layout">
+        <ul className="cart-list">
+          {[1, 2, 3].map((i) => (
+            <li key={i} className="cart-row">
+              <Skeleton className="cart-row-img" />
+              <div className="cart-row-info">
+                <Skeleton style={{ width: '70%', height: '1.1rem' }} />
+                <Skeleton style={{ width: '35%', height: '0.9rem' }} />
               </div>
-            ))}
-          </div>
-          <div className="cart-summary">
-            <Skeleton style={{ width: '100%', height: '300px' }} />
-          </div>
-        </div>
+              <Skeleton style={{ width: '110px', height: '42px', borderRadius: '999px' }} />
+            </li>
+          ))}
+        </ul>
+        <Skeleton className="summary-card" style={{ height: '320px' }} />
       </div>
     </div>
   );

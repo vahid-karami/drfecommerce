@@ -263,7 +263,14 @@
     "clearCart": "Clear Cart",
     "addedToCart": "Added to cart!",
     "addFailed": "Failed to add to cart",
-    "quantity": "Quantity"
+    "quantity": "Quantity",
+    "updateFailed": "Could not update your cart",
+    "itemRemoved": "“{{name}}” was removed from your cart",
+    "clearConfirm": "Remove all items from your cart?",
+    "cleared": "Your cart is now empty",
+    "itemsCount": "{{count}} items",
+    "yourSavings": "You save",
+    "remove": "Remove"
   },
   "checkout": {
     "title": "Checkout",

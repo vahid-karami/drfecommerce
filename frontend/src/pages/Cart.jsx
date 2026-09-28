@@ -5,172 +5,206 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { CartSkeleton } from '../components/Skeletons';
 import Price from '../components/Price';
+import Icon from '../components/Icon';
+import Breadcrumbs from '../components/Breadcrumbs';
+import { bodyPartLabel } from '../utils/bodyParts';
+import { toPersianNumber } from '../hooks/useLanguage';
+import { usePageMeta } from '../utils/seo';
+
+// Mirrors the backend rule in orders.views.order_create.
+const FREE_SHIPPING_FROM = 100;
+const SHIPPING_COST = 9.99;
 
 export default function Cart() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language === 'fa' ? 'fa' : 'en';
+  const num = (n) => (lang === 'fa' ? toPersianNumber(n) : String(n));
   const { cart, updateCartItem, removeFromCart, clearCart, loading: cartLoading } = useCart();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const { success, error: showError } = useToast();
+  const { info, error: showError } = useToast();
 
-  const handleRemove = (itemId, productName) => {
-    removeFromCart(itemId);
-    showError(`${productName} removed from cart`);
+  usePageMeta({ title: t('cart.shoppingCart') });
+
+  const itemName = (product) => (lang === 'fa' && product.name_fa) || product.name_localized || product.name;
+
+  const handleQuantity = async (item, quantity) => {
+    try {
+      await updateCartItem(item.id, quantity);
+    } catch (err) {
+      showError(err.response?.data?.error || t('cart.updateFailed', 'به‌روزرسانی سبد انجام نشد'));
+    }
   };
 
-  const handleClear = () => {
-    clearCart();
-    success('Cart cleared');
+  const handleRemove = async (item) => {
+    try {
+      await removeFromCart(item.id);
+      info(t('cart.itemRemoved', '«{{name}}» از سبد حذف شد', { name: itemName(item.product) }));
+    } catch {
+      showError(t('cart.updateFailed', 'به‌روزرسانی سبد انجام نشد'));
+    }
   };
+
+  const handleClear = async () => {
+    if (!window.confirm(t('cart.clearConfirm', 'همه کالاها از سبد حذف شوند؟'))) return;
+    await clearCart();
+    info(t('cart.cleared', 'سبد خرید خالی شد'));
+  };
+
+  const crumbs = [
+    { to: '/', label: t('common.home') },
+    { label: t('cart.shoppingCart') },
+  ];
+
+  const emptyState = (title, text, action) => (
+    <div className="container">
+      <Breadcrumbs items={crumbs} />
+      <div className="empty-panel">
+        <Icon name="bag" size={44} strokeWidth={1.4} />
+        <h2>{title}</h2>
+        <p>{text}</p>
+        <div className="empty-actions">{action}</div>
+      </div>
+    </div>
+  );
 
   if (!isAuthenticated) {
-    return (
-      <div className="cart-page">
-        <div className="container">
-          <div className="empty-state">
-            <span className="empty-state-icon">🛒</span>
-            <h3>{t('cart.emptyCart')}</h3>
-            <p>{t('cart.addToCartFirst')}</p>
-            <Link to="/login" className="btn btn-primary">{t('common.signIn')}</Link>
-          </div>
-        </div>
-      </div>
+    return emptyState(
+      t('cart.emptyCart'),
+      t('cart.addToCartFirst'),
+      <Link to="/login" className="btn btn-primary">{t('common.signIn')}</Link>,
     );
   }
 
-  if (cartLoading) {
+  if (cartLoading && cart.id === undefined) {
     return (
-      <div className="cart-page">
-        <div className="container">
-          <CartSkeleton />
-        </div>
+      <div className="container">
+        <CartSkeleton />
       </div>
     );
   }
 
   if (!cart.items || cart.items.length === 0) {
-    return (
-      <div className="cart-page">
-        <div className="container">
-          <div className="empty-state">
-            <span className="empty-state-icon">🛒</span>
-            <h3>{t('cart.emptyCart')}</h3>
-            <p>{t('cart.emptyCartDesc')}</p>
-            <Link to="/products" className="btn btn-primary">{t('cart.browseProducts')}</Link>
-          </div>
-        </div>
-      </div>
+    return emptyState(
+      t('cart.emptyCart'),
+      t('cart.emptyCartDesc'),
+      <Link to="/products" className="btn btn-primary">{t('cart.browseProducts')}</Link>,
     );
   }
 
   const subtotal = Number(cart.total_price) || 0;
-  const shipping = subtotal >= 100 ? 0 : 9.99;
+  const shipping = subtotal >= FREE_SHIPPING_FROM ? 0 : SHIPPING_COST;
   const total = subtotal + shipping;
+  const savings = cart.items.reduce(
+    (sum, item) => sum + Math.max(0, Number(item.product.price) - Number(item.product.effective_price)) * item.quantity,
+    0,
+  );
 
   return (
     <div className="cart-page">
       <div className="container">
-        <h1>{t('cart.shoppingCart')}</h1>
+        <Breadcrumbs items={crumbs} />
+        <div className="page-title-row">
+          <h1 className="display-title">{t('cart.shoppingCart')}</h1>
+          <span className="page-title-meta">{t('cart.itemsCount', '{{count}} کالا', { count: num(cart.total_items) })}</span>
+        </div>
 
         <div className="cart-layout">
           <div className="cart-items">
-            {cart.items.map((item) => (
-              <div key={item.id} className="cart-item">
-                <div className="item-image">
-                  {item.product.primary_image ? (
-                    <img src={item.product.primary_image.image} alt={item.product.name} />
-                  ) : (
-                    <div className="image-placeholder">🏥</div>
-                  )}
-                </div>
+            <ul className="cart-list">
+              {cart.items.map((item) => {
+                const product = item.product;
+                const hasDiscount = Number(product.effective_price) < Number(product.price);
+                return (
+                  <li key={item.id} className="cart-row">
+                    <Link to={`/products/${product.slug}`} className="cart-row-img" tabIndex={-1} aria-hidden="true">
+                      {product.primary_image ? (
+                        <img src={product.primary_image.image} alt="" />
+                      ) : (
+                        <Icon name="box" size={32} strokeWidth={1.2} />
+                      )}
+                    </Link>
 
-                <div className="item-details">
-                  <h3>
-                    <Link to={`/products/${item.product.slug}`}>{item.product.name}</Link>
-                  </h3>
-                  {item.product.brand && (
-                    <span className="item-brand">{item.product.brand}</span>
-                  )}
-                  <p className="item-price"><Price amount={item.product.effective_price} /></p>
-                </div>
+                    <div className="cart-row-info">
+                      {product.injury_type && product.injury_type !== 'general' && (
+                        <span className="product-card-meta">{bodyPartLabel(product.injury_type, lang)}</span>
+                      )}
+                      <h2 className="cart-row-title">
+                        <Link to={`/products/${product.slug}`}>{itemName(product)}</Link>
+                      </h2>
+                      <div className="cart-row-unit">
+                        <Price amount={product.effective_price} />
+                        {hasDiscount && <span className="price-was"><Price amount={product.price} showSymbol={false} /></span>}
+                      </div>
+                    </div>
 
-                <div className="item-quantity">
-                  <button
-                    onClick={() => updateCartItem(item.id, item.quantity - 1)}
-                    disabled={item.quantity <= 1}
-                    className="qty-btn"
-                  >
-                    −
-                  </button>
-                  <span className="qty-value">{item.quantity}</span>
-                  <button
-                    onClick={() => updateCartItem(item.id, item.quantity + 1)}
-                    className="qty-btn"
-                  >
-                    +
-                  </button>
-                </div>
+                    <div className="qty cart-row-qty" role="group" aria-label={t('cart.quantity', 'تعداد')}>
+                      <button onClick={() => handleQuantity(item, item.quantity + 1)} aria-label={t('product.increase', 'افزایش')}>
+                        <Icon name="plus" size={16} />
+                      </button>
+                      <span aria-live="polite">{num(item.quantity)}</span>
+                      <button
+                        onClick={() => handleQuantity(item, item.quantity - 1)}
+                        disabled={item.quantity <= 1}
+                        aria-label={t('product.decrease', 'کاهش')}
+                      >
+                        <Icon name="minus" size={16} />
+                      </button>
+                    </div>
 
-                <div className="item-subtotal">
-                  <span><Price amount={item.subtotal} /></span>
-                </div>
+                    <div className="cart-row-total">
+                      <Price amount={item.subtotal} />
+                    </div>
 
-                <button
-                  onClick={() => handleRemove(item.id, item.product.name)}
-                  className="remove-btn"
-                  aria-label="Remove item"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
+                    <button className="icon-btn cart-row-remove" onClick={() => handleRemove(item)} aria-label={t('cart.remove', 'حذف')}>
+                      <Icon name="close" size={18} />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
 
             <div className="cart-actions">
-              <button onClick={handleClear} className="btn btn-ghost btn-sm">
-                {t('cart.clearCart')}
-              </button>
-              <Link to="/products" className="btn btn-outline btn-sm">
-                {t('common.continueShopping')}
+              <Link to="/products" className="link-arrow">
+                <Icon name="chevronRight" size={16} className="flip-ltr" /> {t('common.continueShopping')}
               </Link>
+              <button onClick={handleClear} className="clear-link">{t('cart.clearCart')}</button>
             </div>
           </div>
 
-          <div className="cart-summary">
+          <aside className="summary-card">
             <h2>{t('cart.orderSummary')}</h2>
+            <dl className="summary-rows">
+              <div>
+                <dt>{t('cart.subtotal')}</dt>
+                <dd><Price amount={subtotal} /></dd>
+              </div>
+              {savings > 0 && (
+                <div className="summary-savings">
+                  <dt>{t('cart.yourSavings', 'سود شما از خرید')}</dt>
+                  <dd><Price amount={savings} /></dd>
+                </div>
+              )}
+              <div>
+                <dt>{t('cart.shipping')}</dt>
+                <dd>{shipping === 0 ? <span className="free-tag">{t('cart.free')}</span> : <Price amount={shipping} />}</dd>
+              </div>
+              <div className="summary-total">
+                <dt>{t('cart.total')}</dt>
+                <dd><Price amount={total} /></dd>
+              </div>
+            </dl>
 
-            <div className="summary-row">
-              <span>{t('cart.subtotal')}</span>
-              <span><Price amount={subtotal} /></span>
-            </div>
-
-            <div className="summary-row">
-              <span>{t('cart.shipping')}</span>
-              <span>{shipping === 0 ? t('cart.free') : <Price amount={shipping} />}</span>
-            </div>
-
-            {shipping > 0 && (
-              <p className="shipping-note">
-                {t('cart.addMoreForFreeShipping', { amount: Math.max(0, 500000 - subtotal) })}
-              </p>
-            )}
-
-            <div className="summary-row total">
-              <span>{t('cart.total')}</span>
-              <span><Price amount={total} /></span>
-            </div>
-
-            <button
-              onClick={() => navigate('/checkout')}
-              className="btn btn-primary btn-lg btn-full"
-            >
+            <button onClick={() => navigate('/checkout')} className="btn btn-primary btn-lg btn-full">
               {t('cart.proceedToCheckout')}
             </button>
 
-            <div className="trust-badges">
-              <span>🔒 {t('cart.secureCheckout')}</span>
-              <span>🚚 {t('cart.fastDelivery')}</span>
-            </div>
-          </div>
+            <ul className="summary-perks">
+              <li><Icon name="shield" size={18} /> {t('cart.secureCheckout')}</li>
+              <li><Icon name="truck" size={18} /> {t('cart.fastDelivery')}</li>
+              <li><Icon name="returns" size={18} /> {t('home.trustReturnText', '۷ روز ضمانت بازگشت کالا')}</li>
+            </ul>
+          </aside>
         </div>
       </div>
     </div>
