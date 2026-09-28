@@ -10,10 +10,10 @@ createRoot(document.getElementById('root')).render(
   </StrictMode>,
 );
 
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
-      console.error('Service worker registration failed:', err);
-    });
+// The old cache-first service worker served stale pages after every deploy.
+// It's no longer registered; remove it from browsers that installed it earlier.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    registrations.forEach((registration) => registration.unregister());
   });
 }

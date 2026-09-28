@@ -1,16 +1,16 @@
 {
-  "name": "SportMed Shop | سپر مدیکال",
+  "name": "اسپورت‌مد | SportMed",
   "short_name": "SportMed",
-  "description": "فروشگاه تخصصی محصولات ارتوپدی، بریس و بهبودی آسیب‌های ورزشی",
+  "description": "فروشگاه تخصصی ساپورت‌ها و بریس‌های ورزشی و طبی",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#2563eb",
-  "dir": "auto",
+  "theme_color": "#12348f",
+  "dir": "rtl",
   "lang": "fa",
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "favicon.svg",
       "sizes": "192x192 512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"

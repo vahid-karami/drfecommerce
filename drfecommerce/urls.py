@@ -1,8 +1,8 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.http import JsonResponse
-from django.urls import include, path
+from django.http import HttpResponse, JsonResponse
+from django.urls import include, path, re_path
 from rest_framework_simplejwt.views import TokenRefreshView
 
 
@@ -19,12 +19,24 @@ def api_root(request):
             "reviews": "/api/reviews/",
             "favorites": "/api/favorites/",
         },
-        "frontend": "http://localhost:5173",
     })
 
 
+def frontend_app(request):
+    """Serve the built React app for every non-API URL (client-side routing).
+
+    Falls back to the API index when the frontend hasn't been built (local backend-only dev).
+    """
+    index = settings.FRONTEND_DIST / "index.html"
+    if not index.exists():
+        return api_root(request)
+    response = HttpResponse(index.read_text(encoding="utf-8"))
+    response["Cache-Control"] = "no-cache"
+    return response
+
+
 urlpatterns = [
-    path("", api_root, name="api-root"),
+    path("api/", api_root, name="api-root"),
     path("admin/", admin.site.urls),
     path("api/auth/", include("accounts.urls")),
     path("api/products/", include("products.urls")),
@@ -37,3 +49,7 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+urlpatterns += [
+    re_path(r"^(?!api/|admin/|media/|static/).*$", frontend_app, name="frontend"),
+]
