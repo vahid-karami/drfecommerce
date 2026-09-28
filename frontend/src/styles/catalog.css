@@ -94,6 +94,13 @@
 .rail-card-soft .rail-card-label { background: var(--color-surface-sky); color: var(--color-primary); }
 .band-sky .rail-card-soft .rail-card-label { background: white; }
 
+/* Larger cards (shop by sport): two per view instead of three. */
+.rail-track.rail-lg { grid-auto-columns: max(300px, calc((100% - 20px) / 2)); }
+.rail-lg .rail-card-img { aspect-ratio: 4 / 3; }
+.rail-lg .rail-card-label { padding: 20px 24px 22px; }
+.rail-lg .rail-card-label strong { font-size: var(--font-size-2xl); }
+.rail-lg .rail-card-label span { font-size: var(--font-size-sm); }
+
 /* ------------------------------------------------------------------ */
 /* Hero                                                                */
 /* ------------------------------------------------------------------ */
@@ -382,6 +389,8 @@
     padding-inline: clamp(16px, 3vw, 32px);
     scroll-padding-inline: clamp(16px, 3vw, 32px);
   }
+
+  .rail-track.rail-lg { grid-auto-columns: 82%; }
 
   .guide-grid { grid-template-columns: 1fr; }
   .guide-card { flex-direction: row; }

@@ -169,6 +169,7 @@ export default function Home() {
               title={t('home.shopBySport', 'خرید بر اساس ورزش')}
               items={sportTiles}
               variant="soft"
+              size="lg"
             />
           </div>
         </section>

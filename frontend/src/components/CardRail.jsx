@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import Icon from './Icon';
 
 // Intro column + horizontally scrolling image cards ("shop by body part").
-export default function CardRail({ eyebrow, title, cta, items, variant = 'solid' }) {
+// size="lg" shows two larger cards per view instead of three.
+export default function CardRail({ eyebrow, title, cta, items, variant = 'solid', size = 'md' }) {
   const { t } = useTranslation();
   const trackRef = useRef(null);
   const [edges, setEdges] = useState({ start: true, end: false });
@@ -47,7 +48,7 @@ export default function CardRail({ eyebrow, title, cta, items, variant = 'solid'
         </div>
       </div>
 
-      <div className="rail-track" ref={trackRef} onScroll={updateEdges}>
+      <div className={`rail-track rail-${size}`} ref={trackRef} onScroll={updateEdges}>
         {items.map((item) => (
           <Link key={item.key} to={item.to} className={`rail-card rail-card-${variant}`}>
             <div className="rail-card-img">
