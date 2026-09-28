@@ -20,6 +20,7 @@ const Profile = lazy(() => import('./pages/Profile'));
 const Orders = lazy(() => import('./pages/Orders'));
 const OrderDetail = lazy(() => import('./pages/OrderDetail'));
 const Favorites = lazy(() => import('./pages/Favorites'));
+const PaymentResult = lazy(() => import('./pages/PaymentResult'));
 const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
@@ -57,6 +58,7 @@ function App() {
                       <Route path="/profile" element={<Profile />} />
                       <Route path="/orders" element={<Orders />} />
                       <Route path="/orders/:orderNumber" element={<OrderDetail />} />
+                      <Route path="/payment/result" element={<PaymentResult />} />
                       <Route path="/favorites" element={<Favorites />} />
                       
                       <Route path="/admin-portal" element={<AdminLayout />}>

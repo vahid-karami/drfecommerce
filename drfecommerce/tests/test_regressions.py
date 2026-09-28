@@ -310,3 +310,59 @@ def test_profile_exposes_read_only_is_staff():
     assert res.data["is_staff"] is False
     user.refresh_from_db()
     assert user.is_staff is False
+
+
+@pytest.mark.django_db
+class TestPaymentCallback:
+    def _client(self, order):
+        client = APIClient()
+        client.force_authenticate(order.user)
+        return client
+
+    def test_foreign_callback_url_is_rejected(self, order):
+        res = self._client(order).post(
+            reverse("orders:order-pay-initiate", kwargs={"order_number": order.order_number}),
+            {"gateway": "zarinpal", "callback_url": "https://evil.example/steal"},
+        )
+        assert res.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_sandbox_payment_returns_to_storefront_result_page(self, order, settings):
+        settings.PAYMENT_SANDBOX = True
+        callback = "http://localhost:5173/payment/result?order_number=%s&gateway=zarinpal" % order.order_number
+        res = self._client(order).post(
+            reverse("orders:order-pay-initiate", kwargs={"order_number": order.order_number}),
+            {"gateway": "zarinpal", "callback_url": callback},
+        )
+        assert res.status_code == status.HTTP_200_OK, res.data
+        assert res.data["payment_url"].startswith(callback + "&Authority=ZP-MOCK-")
+
+
+@pytest.mark.django_db
+class TestPersianDigits:
+    def test_login_with_persian_digit_phone(self, api_client):
+        User.objects.create_user(phone="09121234567", password="securepass123")
+        res = api_client.post(reverse("accounts:login"), {"phone": "۰۹۱۲۱۲۳۴۵۶۷", "password": "securepass123"})
+        assert res.status_code == status.HTTP_200_OK, res.data
+
+    def test_register_with_persian_digits_cannot_duplicate_phone(self, api_client):
+        User.objects.create_user(phone="09121234567", password="securepass123")
+        res = api_client.post(reverse("accounts:register"), {"phone": "۰۹۱۲۱۲۳۴۵۶۷", "password": "anotherpass123"})
+        assert res.status_code == status.HTTP_400_BAD_REQUEST
+        assert User.objects.count() == 1
+
+    def test_profile_phone_is_normalized_and_unique(self):
+        User.objects.create_user(phone="09120000009", password="securepass123")
+        me = User.objects.create_user(phone="09120000008", password="securepass123")
+        client = APIClient()
+        client.force_authenticate(me)
+        dup = client.patch(reverse("accounts:profile"), {"phone": "۰۹۱۲۰۰۰۰۰۰۹"}, format="json")
+        assert dup.status_code == status.HTTP_400_BAD_REQUEST
+        ok = client.patch(reverse("accounts:profile"), {"phone": "۰۹۱۲۰۰۰۰۰۰۷"}, format="json")
+        assert ok.data["phone"] == "09120000007"
+
+    def test_order_shipping_fields_are_normalized(self, shopper_with_cart):
+        client, _ = shopper_with_cart
+        data = {**SHIPPING, "shipping_zip": "۱۲۳۴۵۶۷۸۹۰", "shipping_phone": "۰۹۱۲۶۶۶۶۶۶۶"}
+        res = client.post(reverse("orders:order-create"), data)
+        assert res.status_code == status.HTTP_201_CREATED
+        assert (res.data["shipping_zip"], res.data["shipping_phone"]) == ("1234567890", "09126666666")

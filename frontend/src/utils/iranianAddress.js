@@ -1,3 +1,5 @@
+import { toEnglishDigits } from './digits';
+
 export const IRANIAN_PROVINCES = [
   { id: 'tehran', name: 'تهران', name_en: 'Tehran', cities: ['تهران', 'ری', 'شمیرانات', 'دماوند', 'پردیس'] },
   { id: 'isfahan', name: 'اصفهان', name_en: 'Isfahan', cities: ['اصفهان', 'کاشان', 'نجف آباد', 'خمینی شهر', 'فلاورجان'] },
@@ -17,7 +19,7 @@ export const IRANIAN_PROVINCES = [
   { id: 'golestan', name: 'گلستان', name_en: 'Golestan', cities: ['گرگان', 'گنبد کاووس', 'علی آباد', 'آق قلا', 'بندر گز'] },
   { id: 'semnan', name: 'سمنان', name_en: 'Semnan', cities: ['سمنان', 'شاهرود', 'دامغان', 'گرمسار', 'میامی'] },
   { id: 'north-khorasan', name: 'خراسان شمالی', name_en: 'North Khorasan', cities: ['بجنورد', 'شیروان', 'فاروج', 'اسفراین', 'جاجرم'] },
-  { id: 'south-khorasan', name: 'خراسان جنوبی', name_en: 'South Khorasan', cities: ['birjand', 'فردوس', 'نهبندان', 'سربیشه', 'طبس'] },
+  { id: 'south-khorasan', name: 'خراسان جنوبی', name_en: 'South Khorasan', cities: ['بیرجند', 'فردوس', 'نهبندان', 'سربیشه', 'طبس'] },
   { id: 'kerman', name: 'کرمان', name_en: 'Kerman', cities: ['کرمان', 'رفسنجان', 'سیرجان', 'جیرفت', 'بم'] },
   { id: 'yazd', name: 'یزد', name_en: 'Yazd', cities: ['یزد', 'میبد', 'اردکان', 'مهریز', 'بافق'] },
   { id: 'hormozgan', name: 'هرمزگان', name_en: 'Hormozgan', cities: ['بندرعباس', 'میناب', 'قشم', 'کیش', 'بندر لنگه'] },
@@ -55,13 +57,13 @@ export function validateIranianAddress(address) {
 
 export function validateIranianPostalCode(postalCode) {
   if (!postalCode) return false;
-  const cleaned = postalCode.replace(/[\s-]/g, '');
+  const cleaned = toEnglishDigits(postalCode).replace(/[\s-]/g, '');
   return /^\d{10}$/.test(cleaned);
 }
 
 export function formatIranianPostalCode(postalCode) {
   if (!postalCode) return '';
-  const cleaned = postalCode.replace(/[\s-]/g, '');
+  const cleaned = toEnglishDigits(postalCode).replace(/[\s-]/g, '');
   if (cleaned.length !== 10) return cleaned;
   return `${cleaned.slice(0, 5)}-${cleaned.slice(5)}`;
 }

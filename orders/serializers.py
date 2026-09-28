@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from drfecommerce.fields import DigitsCharField
+
 from .models import Order, OrderItem
 
 
@@ -46,7 +48,7 @@ class OrderCreateSerializer(serializers.Serializer):
     shipping_address = serializers.CharField()
     shipping_city = serializers.CharField(max_length=100)
     shipping_state = serializers.CharField(max_length=100, required=False, allow_blank=True)
-    shipping_zip = serializers.CharField(max_length=20)
+    shipping_zip = DigitsCharField(max_length=20)
     shipping_country = serializers.CharField(max_length=100, required=False, default="US")
-    shipping_phone = serializers.CharField(max_length=15)
+    shipping_phone = DigitsCharField(max_length=15)
     notes = serializers.CharField(required=False, allow_blank=True)

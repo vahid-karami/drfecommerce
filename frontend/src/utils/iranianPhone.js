@@ -1,7 +1,9 @@
+import { toEnglishDigits } from './digits';
+
 export function validateIranianPhone(phone) {
   if (!phone) return false;
 
-  const cleaned = phone.replace(/[\s\-()]/g, '');
+  const cleaned = toEnglishDigits(phone).replace(/[\s\-()]/g, '');
 
   // +989123456789 or 00989123456789
   if (/^(\+98|0098)9\d{9}$/.test(cleaned)) return true;
@@ -23,7 +25,7 @@ export function validateIranianPhone(phone) {
 export function formatIranianPhone(phone) {
   if (!phone) return '';
 
-  const cleaned = phone.replace(/[\s\-()]/g, '');
+  const cleaned = toEnglishDigits(phone).replace(/[\s\-()]/g, '');
 
   if (cleaned.startsWith('+98')) {
     return cleaned;

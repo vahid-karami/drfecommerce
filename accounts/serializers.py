@@ -1,12 +1,14 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
+from drfecommerce.fields import DigitsCharField, normalize_digits
+
 User = get_user_model()
 
 
 class UserRegistrationSerializer(serializers.Serializer):
-    username = serializers.CharField(max_length=150, required=False, allow_blank=True)
-    phone = serializers.CharField(max_length=50, required=False, allow_blank=True)
+    username = DigitsCharField(max_length=150, required=False, allow_blank=True)
+    phone = DigitsCharField(max_length=50, required=False, allow_blank=True)
     password = serializers.CharField(write_only=True, min_length=8)
     first_name = serializers.CharField(required=False, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_blank=True)
@@ -35,7 +37,7 @@ class UserRegistrationSerializer(serializers.Serializer):
 
 
 class OTPSendSerializer(serializers.Serializer):
-    phone = serializers.CharField(max_length=15)
+    phone = DigitsCharField(max_length=15)
     otp_type = serializers.ChoiceField(
         choices=["register", "login", "reset_password"],
         default="register"
@@ -43,8 +45,8 @@ class OTPSendSerializer(serializers.Serializer):
 
 
 class OTPVerifySerializer(serializers.Serializer):
-    phone = serializers.CharField(max_length=15)
-    code = serializers.CharField(max_length=6)
+    phone = DigitsCharField(max_length=15)
+    code = DigitsCharField(max_length=6)
     otp_type = serializers.ChoiceField(
         choices=["register", "login", "reset_password"],
         default="register"
@@ -52,8 +54,8 @@ class OTPVerifySerializer(serializers.Serializer):
 
 
 class PasswordResetSerializer(serializers.Serializer):
-    phone = serializers.CharField(max_length=15)
-    code = serializers.CharField(max_length=6)
+    phone = DigitsCharField(max_length=15)
+    code = DigitsCharField(max_length=6)
     new_password = serializers.CharField(write_only=True, min_length=8)
 
 
@@ -66,10 +68,17 @@ class UserProfileSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "date_joined", "is_staff"]
 
+    def validate_phone(self, value):
+        # The model's unique check ran on the raw input; re-check after normalizing digits.
+        value = normalize_digits(value)
+        if value and User.objects.filter(phone=value).exclude(pk=getattr(self.instance, "pk", None)).exists():
+            raise serializers.ValidationError("A user with this phone number already exists.")
+        return value
+
 
 class UserLoginSerializer(serializers.Serializer):
-    username = serializers.CharField(max_length=150, required=False, allow_blank=True)
-    phone = serializers.CharField(max_length=50, required=False, allow_blank=True)
+    username = DigitsCharField(max_length=150, required=False, allow_blank=True)
+    phone = DigitsCharField(max_length=50, required=False, allow_blank=True)
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):

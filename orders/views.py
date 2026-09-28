@@ -1,7 +1,10 @@
 import uuid
 from decimal import Decimal
+from urllib.parse import urlparse
 
+from django.conf import settings
 from django.db import transaction
+from django.http.request import validate_host
 from django.db.models import F
 from rest_framework import status, permissions
 from rest_framework.decorators import api_view, permission_classes
@@ -12,6 +15,15 @@ from products.models import Product
 
 from .models import Order, OrderItem
 from .serializers import OrderCreateSerializer, OrderSerializer
+
+
+def is_allowed_callback(url, request):
+    """The gateway sends the customer back here, so it must be one of our own hosts."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        return False
+    allowed = list(settings.ALLOWED_HOSTS) + [request.get_host().split(":")[0]]
+    return validate_host(parsed.hostname, allowed)
 
 
 def generate_order_number():
@@ -155,10 +167,13 @@ def order_pay_initiate(request, order_number):
     gateway_name = str(request.data.get("gateway", "zarinpal")).lower()
     if gateway_name not in ("zarinpal", "idpay"):
         return Response({"error": "Unsupported payment gateway."}, status=status.HTTP_400_BAD_REQUEST)
-    callback_url = request.data.get(
-        "callback_url",
-        request.build_absolute_uri(f"/api/orders/payment/verify/?order_number={order.order_number}&gateway={gateway_name}"),
+
+    # Where the gateway returns the customer: the storefront's payment result page.
+    callback_url = request.data.get("callback_url") or request.build_absolute_uri(
+        f"/payment/result?order_number={order.order_number}&gateway={gateway_name}"
     )
+    if not is_allowed_callback(callback_url, request):
+        return Response({"error": "Invalid callback_url."}, status=status.HTTP_400_BAD_REQUEST)
 
     from .payments import PaymentGatewayError, get_payment_gateway
 

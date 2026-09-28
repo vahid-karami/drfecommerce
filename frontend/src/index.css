@@ -5,6 +5,7 @@
 @import './styles/catalog.css';
 @import './styles/pages.css';
 @import './styles/product.css';
+@import './styles/checkout.css';
 
 /* App Layout */
 .app {

@@ -9,10 +9,6 @@
   flex-direction: row-reverse;
 }
 
-[dir="rtl"] .checkout-content {
-  direction: rtl;
-}
-
 [dir="rtl"] .form-row {
   direction: rtl;
 }
@@ -30,10 +26,6 @@
 }
 
 [dir="rtl"] .order-footer {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .order-timeline {
   flex-direction: row-reverse;
 }
 
@@ -120,6 +112,4 @@
 
   [dir="rtl"] .products-grid {
     direction: rtl;
-  }
-
-  }
+  }}

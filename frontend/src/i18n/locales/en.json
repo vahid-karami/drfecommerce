@@ -294,7 +294,18 @@
     "invalidPostalCode": "Postal code must be 10 digits",
     "orderSuccess": "Order placed successfully!",
     "selectCity": "Select city",
-    "selectProvince": "Select province"
+    "selectProvince": "Select province",
+    "stepCart": "Cart",
+    "stepShipping": "Shipping",
+    "stepPayment": "Payment",
+    "contact": "Contact",
+    "addressTooShort": "Please enter a fuller address (at least 10 characters).",
+    "addressPlaceholder": "Street, alley, number, unit",
+    "optional": "optional",
+    "paymentMethod": "Payment method",
+    "gatewayNote": "Pay online with any Shetab card",
+    "payAndPlace": "Place order & pay",
+    "secureNote": "After placing the order you'll be taken to the secure bank gateway."
   },
   "auth": {
     "welcomeBack": "Welcome Back",
@@ -351,7 +362,10 @@
     "cancelConfirm": "Are you sure you want to cancel this order?",
     "cancelFailed": "Could not cancel the order",
     "notFound": "Order not found",
-    "viewAll": "All orders"
+    "viewAll": "All orders",
+    "orderTitle": "Order",
+    "cancelled": "Order cancelled",
+    "progress": "Order progress"
   },
   "favorites": {
     "myFavorites": "My Favorites",
@@ -392,5 +406,25 @@
     "saveChanges": "Save changes",
     "updateFailed": "Could not save your details",
     "updateSuccess": "Your details were saved"
+  },
+  "payment": {
+    "resultTitle": "Payment result",
+    "missingInfo": "Payment details are missing.",
+    "verifyFailed": "The payment could not be verified.",
+    "verifying": "Verifying your payment...",
+    "dontClose": "Please don't close this page.",
+    "success": "Payment successful",
+    "successText": "Your order is confirmed. See shipping details on the order page.",
+    "orderNumber": "Order number",
+    "refId": "Reference",
+    "amount": "Amount",
+    "viewOrder": "View order",
+    "failed": "Payment failed",
+    "failedHelp": "If money was taken from your account it will be returned within 72 hours.",
+    "retry": "Try again",
+    "startFailed": "Could not connect to the payment gateway.",
+    "payNowTitle": "Pay for your order",
+    "payNowText": "Your order is saved and will be prepared and shipped once paid.",
+    "payAmount": "Pay"
   }
 }

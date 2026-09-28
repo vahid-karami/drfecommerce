@@ -30,6 +30,8 @@ export const ENDPOINTS = {
   orderCreate: `${API_BASE_URL}/orders/create/`,
   orderDetail: (id) => `${API_BASE_URL}/orders/${id}/`,
   orderCancel: (id) => `${API_BASE_URL}/orders/${id}/cancel/`,
+  orderPay: (id) => `${API_BASE_URL}/orders/${id}/pay/`,
+  paymentVerify: `${API_BASE_URL}/orders/payment/verify/`,
 
   productReviews: (slug) => `${API_BASE_URL}/reviews/product/${slug}/`,
   reviewCreate: (slug) => `${API_BASE_URL}/reviews/product/${slug}/create/`,

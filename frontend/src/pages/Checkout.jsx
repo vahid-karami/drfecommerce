@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import apiClient from '../api/client';
@@ -7,300 +7,257 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import Price from '../components/Price';
+import Icon from '../components/Icon';
+import Breadcrumbs from '../components/Breadcrumbs';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { validateIranianPhone } from '../utils/iranianPhone';
-import {
-  IRANIAN_PROVINCES,
-  validateIranianPostalCode,
-} from '../utils/iranianAddress';
+import { IRANIAN_PROVINCES, validateIranianPostalCode } from '../utils/iranianAddress';
+import { toEnglishDigits } from '../utils/digits';
+import { GATEWAYS, startPayment } from '../utils/payment';
+import { toPersianNumber } from '../hooks/useLanguage';
+import { usePageMeta } from '../utils/seo';
+
+// Mirrors the backend rule in orders.views.order_create.
+const FREE_SHIPPING_FROM = 100;
+const SHIPPING_COST = 9.99;
+
+function Steps({ current }) {
+  const { t } = useTranslation();
+  const steps = [t('checkout.stepCart', 'سبد خرید'), t('checkout.stepShipping', 'اطلاعات ارسال'), t('checkout.stepPayment', 'پرداخت')];
+  return (
+    <ol className="checkout-steps">
+      {steps.map((label, i) => (
+        <li key={label} className={i < current ? 'done' : i === current ? 'current' : ''} aria-current={i === current ? 'step' : undefined}>
+          <span className="step-dot">{i < current ? <Icon name="check" size={14} strokeWidth={2.4} /> : i + 1}</span>
+          {label}
+        </li>
+      ))}
+    </ol>
+  );
+}
 
 export default function Checkout() {
   const { t, i18n } = useTranslation();
+  const lang = i18n.language === 'fa' ? 'fa' : 'en';
+  const num = (n) => (lang === 'fa' ? toPersianNumber(n) : String(n));
   const navigate = useNavigate();
   const { cart, loading: cartLoading, refreshCart } = useCart();
-  const { user } = useAuth();
-  const { success, error: showError } = useToast();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { error: showError } = useToast();
 
-  const isPersian = i18n.language === 'fa';
+  usePageMeta({ title: t('checkout.title') });
 
-  const [formData, setFormData] = useState({
-    shipping_address: '',
-    shipping_city: '',
-    shipping_state: '',
-    shipping_zip: '',
-    shipping_country: isPersian ? 'IR' : 'US',
-    shipping_phone: '',
+  // Prefilled from the profile; the user can edit everything.
+  const [form, setForm] = useState(() => ({
+    shipping_phone: user?.phone || '',
+    shipping_state: user?.province || '',
+    shipping_city: user?.city || '',
+    shipping_zip: user?.postal_code || '',
+    shipping_address: user?.address || '',
     notes: '',
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  }));
+  const [gateway, setGateway] = useState('zarinpal');
 
+  // The profile loads after the first render on a hard reload; fill only empty fields.
   useEffect(() => {
-    if (user) {
-      setFormData((prev) => ({
-        ...prev,
-        shipping_phone: prev.shipping_phone || user.phone || '',
-        shipping_address: prev.shipping_address || user.address || '',
-        shipping_city: prev.shipping_city || user.city || '',
-        shipping_state: prev.shipping_state || user.province || '',
-        shipping_zip: prev.shipping_zip || user.postal_code || '',
-      }));
-    }
+    if (!user) return;
+    setForm((f) => ({
+      ...f,
+      shipping_phone: f.shipping_phone || user.phone || '',
+      shipping_state: f.shipping_state || user.province || '',
+      shipping_city: f.shipping_city || user.city || '',
+      shipping_zip: f.shipping_zip || user.postal_code || '',
+      shipping_address: f.shipping_address || user.address || '',
+    }));
   }, [user]);
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name === 'shipping_state' && formData.shipping_country === 'IR') {
-      const selectedProv = IRANIAN_PROVINCES.find((p) => p.name === value || p.id === value);
-      const cities = selectedProv ? selectedProv.cities : [];
-      setFormData((prev) => ({
-        ...prev,
-        shipping_state: value,
-        shipping_city: cities.length > 0 ? cities[0] : '',
-      }));
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
+  const province = IRANIAN_PROVINCES.find((p) => p.name === form.shipping_state);
+
+  const setField = (name, value) => {
+    setForm((f) => ({ ...f, [name]: value }));
+    setErrors((e) => ({ ...e, [name]: undefined }));
+  };
+
+  const validate = () => {
+    const next = {};
+    if (!validateIranianPhone(form.shipping_phone)) next.shipping_phone = t('auth.invalidPhone');
+    if (!form.shipping_state) next.shipping_state = t('common.required', 'الزامی است');
+    if (!form.shipping_city.trim()) next.shipping_city = t('common.required', 'الزامی است');
+    if (!validateIranianPostalCode(form.shipping_zip)) next.shipping_zip = t('checkout.invalidPostalCode');
+    if (form.shipping_address.trim().length < 10) next.shipping_address = t('checkout.addressTooShort', 'نشانی را کامل‌تر بنویسید (حداقل ۱۰ حرف).');
+    setErrors(next);
+    return Object.keys(next).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (formData.shipping_country === 'IR' || formData.shipping_phone.startsWith('09') || formData.shipping_phone.startsWith('+98')) {
-      if (!validateIranianPhone(formData.shipping_phone)) {
-        const msg = t('auth.invalidPhone', 'Please enter a valid phone number (e.g. 09123456789)');
-        setError(msg);
-        showError(msg);
-        return;
-      }
-    }
-
-    if (formData.shipping_country === 'IR' && !validateIranianPostalCode(formData.shipping_zip)) {
-      const msg = t('checkout.invalidPostalCode', 'Postal code must be 10 digits');
-      setError(msg);
-      showError(msg);
+    if (!validate()) {
+      document.querySelector('.field-error')?.closest('.form-group')?.querySelector('input,select,textarea')?.focus();
       return;
     }
-
-    setLoading(true);
-    setError('');
-
+    setSubmitting(true);
+    let orderNumber;
     try {
-      const response = await apiClient.post(ENDPOINTS.orderCreate, formData);
-      success(t('checkout.orderSuccess', 'Order placed successfully!'));
-      navigate(`/orders/${response.data.order_number}`);
-      // The server already emptied the cart; just resync local state.
+      const { data } = await apiClient.post(ENDPOINTS.orderCreate, {
+        ...form,
+        shipping_phone: toEnglishDigits(form.shipping_phone),
+        shipping_zip: toEnglishDigits(form.shipping_zip).replace(/[\s-]/g, ''),
+        shipping_country: 'IR',
+      });
+      orderNumber = data.order_number;
       refreshCart();
+      await startPayment({ orderNumber, gateway, navigate });
     } catch (err) {
       const message = err.response?.data?.error || t('checkout.orderFailed');
-      setError(message);
       showError(message);
-    } finally {
-      setLoading(false);
+      // The order exists but payment couldn't start: let them retry from the order page.
+      if (orderNumber) navigate(`/orders/${orderNumber}`);
+      setSubmitting(false);
     }
   };
 
+  if (authLoading) return <LoadingSpinner />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (cartLoading || cart.id === undefined) return <LoadingSpinner />;
+  if (!cart.items || cart.items.length === 0) return <Navigate to="/cart" replace />;
+
   const subtotal = Number(cart.total_price) || 0;
-  const shipping = subtotal >= 100 ? 0 : 9.99;
+  const shipping = subtotal >= FREE_SHIPPING_FROM ? 0 : SHIPPING_COST;
   const total = subtotal + shipping;
+  const itemName = (p) => (lang === 'fa' && p.name_fa) || p.name_localized || p.name;
 
-  // On a hard reload the cart hasn't been fetched yet; don't bounce to /cart.
-  if (cartLoading || (user && cart.id === undefined)) {
-    return <LoadingSpinner />;
-  }
-
-  if (!cart.items || cart.items.length === 0) {
-    return <Navigate to="/cart" replace />;
-  }
+  const fieldError = (name) =>
+    errors[name] && (
+      <p className="field-error" id={`${name}-error`}>
+        {errors[name]}
+      </p>
+    );
+  const fieldProps = (name) => ({
+    id: name,
+    name,
+    value: form[name],
+    onChange: (e) => setField(name, e.target.value),
+    'aria-invalid': Boolean(errors[name]),
+    'aria-describedby': errors[name] ? `${name}-error` : undefined,
+    className: `form-input ${errors[name] ? 'has-error' : ''}`,
+  });
 
   return (
     <div className="checkout-page">
-      <h1>{t('checkout.title')}</h1>
+      <div className="container">
+        <Breadcrumbs items={[{ to: '/', label: t('common.home') }, { to: '/cart', label: t('cart.shoppingCart') }, { label: t('checkout.title') }]} />
+        <h1 className="display-title">{t('checkout.title')}</h1>
+        <Steps current={1} />
 
-      <div className="checkout-content">
-        <form onSubmit={handleSubmit} className="checkout-form">
-          <section className="form-section">
-            <h2>{t('checkout.shippingInfo')}</h2>
-
-            {error && <div className="error-message">{error}</div>}
-
-            <div className="form-group">
-              <label htmlFor="shipping_phone">{t('checkout.phone')} *</label>
-              <input
-                type="tel"
-                id="shipping_phone"
-                name="shipping_phone"
-                value={formData.shipping_phone}
-                onChange={handleChange}
-                required
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="shipping_address">{t('checkout.address')} *</label>
-              <textarea
-                id="shipping_address"
-                name="shipping_address"
-                value={formData.shipping_address}
-                onChange={handleChange}
-                required
-                className="form-input"
-                rows={3}
-              />
-            </div>
-
-            <div className="form-row">
+        <form className="checkout-layout" onSubmit={handleSubmit} noValidate>
+          <div className="checkout-main">
+            <section className="form-card">
+              <h2><Icon name="phone" size={20} /> {t('checkout.contact', 'اطلاعات تماس')}</h2>
               <div className="form-group">
-                <label htmlFor="shipping_country">{t('checkout.country')} *</label>
-                <select
-                  id="shipping_country"
-                  name="shipping_country"
-                  value={formData.shipping_country}
-                  onChange={handleChange}
-                  className="form-input"
-                >
-                  <option value="IR">ایران (Iran)</option>
-                  <option value="US">United States</option>
-                  <option value="CA">Canada</option>
-                  <option value="UK">United Kingdom</option>
-                </select>
+                <label className="form-label" htmlFor="shipping_phone">{t('checkout.phone')}</label>
+                <input {...fieldProps('shipping_phone')} type="tel" inputMode="tel" dir="ltr" autoComplete="tel" placeholder="09123456789" />
+                {fieldError('shipping_phone')}
               </div>
+            </section>
 
-              <div className="form-group">
-                <label htmlFor="shipping_state">{t('checkout.state')} *</label>
-                {formData.shipping_country === 'IR' ? (
+            <section className="form-card">
+              <h2><Icon name="truck" size={20} /> {t('checkout.shippingInfo')}</h2>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label className="form-label" htmlFor="shipping_state">{t('checkout.state')}</label>
                   <select
-                    id="shipping_state"
-                    name="shipping_state"
-                    value={formData.shipping_state}
-                    onChange={handleChange}
-                    required
-                    className="form-input"
+                    {...fieldProps('shipping_state')}
+                    className={`form-select ${errors.shipping_state ? 'has-error' : ''}`}
+                    onChange={(e) => {
+                      setField('shipping_state', e.target.value);
+                      setField('shipping_city', '');
+                    }}
                   >
-                    <option value="">{t('checkout.selectProvince', 'Select Province')}</option>
-                    {IRANIAN_PROVINCES.map((prov) => (
-                      <option key={prov.id} value={prov.name}>
-                        {isPersian ? prov.name : prov.name_en}
-                      </option>
+                    <option value="">{t('checkout.selectProvince')}</option>
+                    {IRANIAN_PROVINCES.map((p) => (
+                      <option key={p.id} value={p.name}>{lang === 'fa' ? p.name : p.name_en}</option>
                     ))}
                   </select>
-                ) : (
-                  <input
-                    type="text"
-                    id="shipping_state"
-                    name="shipping_state"
-                    value={formData.shipping_state}
-                    onChange={handleChange}
-                    className="form-input"
-                  />
-                )}
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="shipping_city">{t('checkout.city')} *</label>
-                {formData.shipping_country === 'IR' && formData.shipping_state ? (
-                  <select
-                    id="shipping_city"
-                    name="shipping_city"
-                    value={formData.shipping_city}
-                    onChange={handleChange}
-                    required
-                    className="form-input"
-                  >
-                    <option value="">{t('checkout.selectCity', 'Select City')}</option>
-                    {(IRANIAN_PROVINCES.find((p) => p.name === formData.shipping_state || p.id === formData.shipping_state)?.cities || []).map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    id="shipping_city"
-                    name="shipping_city"
-                    value={formData.shipping_city}
-                    onChange={handleChange}
-                    required
-                    className="form-input"
-                  />
-                )}
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="shipping_zip">{t('checkout.zipCode')} *</label>
-                <input
-                  type="text"
-                  id="shipping_zip"
-                  name="shipping_zip"
-                  value={formData.shipping_zip}
-                  onChange={handleChange}
-                  required
-                  maxLength={10}
-                  placeholder={formData.shipping_country === 'IR' ? '1234567890' : '10001'}
-                  className="form-input"
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="notes">{t('checkout.orderNotes')}</label>
-              <textarea
-                id="notes"
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                className="form-input"
-                rows={3}
-                placeholder={t('checkout.notesPlaceholder')}
-              />
-            </div>
-          </section>
-
-          <button type="submit" disabled={loading} className="btn btn-primary btn-lg btn-full">
-            {loading ? t('checkout.placingOrder') : (
-              <span>
-                {t('checkout.placeOrder')} - <Price amount={total} />
-              </span>
-            )}
-          </button>
-        </form>
-
-        <div className="order-summary">
-          <h2>{t('checkout.orderSummary')}</h2>
-
-          <div className="summary-items">
-            {cart.items.map((item) => (
-              <div key={item.id} className="summary-item">
-                <div className="item-info">
-                  <span className="item-name">{item.product.name_localized || item.product.name}</span>
-                  <span className="item-qty">x{item.quantity}</span>
+                  {fieldError('shipping_state')}
                 </div>
-                <span className="item-price"><Price amount={item.subtotal} /></span>
+
+                <div className="form-group">
+                  <label className="form-label" htmlFor="shipping_city">{t('checkout.city')}</label>
+                  {/* Suggest the province's main cities but allow any city. */}
+                  <input {...fieldProps('shipping_city')} list="city-options" autoComplete="address-level2" placeholder={t('checkout.selectCity')} />
+                  <datalist id="city-options">
+                    {(province?.cities || []).map((c) => <option key={c} value={c} />)}
+                  </datalist>
+                  {fieldError('shipping_city')}
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" htmlFor="shipping_zip">{t('checkout.zipCode')}</label>
+                  <input {...fieldProps('shipping_zip')} inputMode="numeric" dir="ltr" autoComplete="postal-code" placeholder="1234567890" maxLength={12} />
+                  {fieldError('shipping_zip')}
+                </div>
               </div>
-            ))}
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="shipping_address">{t('checkout.address')}</label>
+                <textarea {...fieldProps('shipping_address')} className={`form-textarea ${errors.shipping_address ? 'has-error' : ''}`} rows={3} autoComplete="street-address" placeholder={t('checkout.addressPlaceholder', 'خیابان، کوچه، پلاک، واحد')} />
+                {fieldError('shipping_address')}
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="notes">
+                  {t('checkout.orderNotes')} <span className="optional">({t('checkout.optional', 'اختیاری')})</span>
+                </label>
+                <textarea {...fieldProps('notes')} className="form-textarea" rows={2} placeholder={t('checkout.notesPlaceholder')} />
+              </div>
+            </section>
+
+            <section className="form-card">
+              <h2><Icon name="card" size={20} /> {t('checkout.paymentMethod', 'روش پرداخت')}</h2>
+              <div className="gateway-options" role="radiogroup" aria-label={t('checkout.paymentMethod', 'روش پرداخت')}>
+                {GATEWAYS.map((g) => (
+                  <label key={g.key} className={`gateway-option ${gateway === g.key ? 'selected' : ''}`}>
+                    <input type="radio" name="gateway" value={g.key} checked={gateway === g.key} onChange={() => setGateway(g.key)} />
+                    <span className="gateway-name">{lang === 'fa' ? g.fa : g.en}</span>
+                    <span className="gateway-note">{t('checkout.gatewayNote', 'پرداخت آنلاین با کلیه کارت‌های شتاب')}</span>
+                  </label>
+                ))}
+              </div>
+            </section>
           </div>
 
-          <div className="summary-divider" />
-
-          <div className="summary-row">
-            <span>{t('checkout.subtotal')}</span>
-            <span><Price amount={subtotal} /></span>
-          </div>
-
-          <div className="summary-row">
-            <span>{t('checkout.shipping')}</span>
-            <span>{shipping === 0 ? t('checkout.free') : <Price amount={shipping} />}</span>
-          </div>
-
-          <div className="summary-row total">
-            <span>{t('checkout.total')}</span>
-            <span><Price amount={total} /></span>
-          </div>
-        </div>
+          <aside className="summary-card">
+            <h2>{t('checkout.orderSummary')}</h2>
+            <ul className="summary-items">
+              {cart.items.map((item) => (
+                <li key={item.id}>
+                  <span className="summary-thumb">
+                    {item.product.primary_image && <img src={item.product.primary_image.image} alt="" />}
+                    <span className="summary-qty">{num(item.quantity)}</span>
+                  </span>
+                  <span className="summary-name">{itemName(item.product)}</span>
+                  <Price amount={item.subtotal} />
+                </li>
+              ))}
+            </ul>
+            <dl className="summary-rows">
+              <div><dt>{t('checkout.subtotal')}</dt><dd><Price amount={subtotal} /></dd></div>
+              <div>
+                <dt>{t('checkout.shipping')}</dt>
+                <dd>{shipping === 0 ? <span className="free-tag">{t('checkout.free')}</span> : <Price amount={shipping} />}</dd>
+              </div>
+              <div className="summary-total"><dt>{t('checkout.total')}</dt><dd><Price amount={total} /></dd></div>
+            </dl>
+            <button type="submit" disabled={submitting} className="btn btn-primary btn-lg btn-full">
+              {submitting ? t('checkout.placingOrder') : t('checkout.payAndPlace', 'ثبت سفارش و پرداخت')}
+            </button>
+            <p className="summary-fineprint">
+              <Icon name="shield" size={16} /> {t('checkout.secureNote', 'پس از ثبت سفارش به درگاه امن بانکی منتقل می‌شوید.')}
+            </p>
+          </aside>
+        </form>
       </div>
     </div>
   );

@@ -2,8 +2,9 @@ import json
 import logging
 import uuid
 from decimal import Decimal
-import urllib.request
 import urllib.error
+import urllib.parse
+import urllib.request
 
 from django.conf import settings
 
@@ -12,6 +13,12 @@ logger = logging.getLogger(__name__)
 
 class PaymentGatewayError(Exception):
     pass
+
+
+def mock_return_url(callback_url, **params):
+    """Sandbox only: skip the gateway page and go straight back to the callback, like a paid transaction would."""
+    separator = "&" if urllib.parse.urlparse(callback_url).query else "?"
+    return f"{callback_url}{separator}{urllib.parse.urlencode(params)}"
 
 
 def toman_amount(order):
@@ -93,7 +100,7 @@ class ZarinPalGateway:
             return {
                 "success": True,
                 "authority": authority,
-                "payment_url": f"/api/orders/payment/mock-redirect/?authority={authority}&order_number={order.order_number}",
+                "payment_url": mock_return_url(callback_url, Authority=authority, Status="OK"),
                 "amount": amount_toman,
                 "is_mock": True,
             }
@@ -194,7 +201,7 @@ class IDPayGateway:
             return {
                 "success": True,
                 "id": track_id,
-                "payment_url": f"/api/orders/payment/mock-redirect/?id={track_id}&order_number={order.order_number}",
+                "payment_url": mock_return_url(callback_url, id=track_id, status="10"),
                 "amount": amount_irr,
                 "is_mock": True,
             }

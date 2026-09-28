@@ -1,72 +1,79 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import apiClient from '../api/client';
 import { ENDPOINTS } from '../api/endpoints';
+import { useToast } from '../context/ToastContext';
 import { formatDate } from '../utils/persianDate';
+import { toPersianNumber } from '../hooks/useLanguage';
+import { ORDER_STEPS, orderStatus, paymentStatus, canPay, canCancel } from '../utils/orderStatus';
+import { GATEWAYS, startPayment } from '../utils/payment';
+import { usePageMeta } from '../utils/seo';
 import Price from '../components/Price';
+import Icon from '../components/Icon';
+import Breadcrumbs from '../components/Breadcrumbs';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function OrderDetail() {
   const { t, i18n } = useTranslation();
+  const lang = i18n.language === 'fa' ? 'fa' : 'en';
+  const num = (n) => (lang === 'fa' ? toPersianNumber(n) : String(n));
   const { orderNumber } = useParams();
+  const navigate = useNavigate();
+  const { success, error: showError } = useToast();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [gateway, setGateway] = useState('zarinpal');
+  const [busy, setBusy] = useState(false);
+
+  usePageMeta({ title: t('orders.orderDetail') });
 
   useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        const response = await apiClient.get(ENDPOINTS.orderDetail(orderNumber));
-        setOrder(response.data);
-      } catch {
-        setError(t('orders.notFound'));
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchOrder();
-  }, [orderNumber, t]);
+    apiClient
+      .get(ENDPOINTS.orderDetail(orderNumber))
+      .then((response) => setOrder(response.data))
+      .catch(() => setOrder(null))
+      .finally(() => setLoading(false));
+  }, [orderNumber]);
 
-  const handleCancel = async () => {
-    if (!window.confirm(t('orders.cancelConfirm'))) return;
+  const handlePay = async () => {
+    setBusy(true);
     try {
-      await apiClient.post(ENDPOINTS.orderCancel(orderNumber));
-      setOrder({ ...order, status: 'cancelled' });
-    } catch {
-      alert(t('orders.cancelFailed'));
+      await startPayment({ orderNumber, gateway, navigate });
+    } catch (err) {
+      showError(err.response?.data?.error || t('payment.startFailed', 'اتصال به درگاه پرداخت انجام نشد.'));
+      setBusy(false);
     }
   };
 
-  const getStatusClass = (status) => {
-    const classes = {
-      pending: 'status-pending',
-      confirmed: 'status-confirmed',
-      processing: 'status-processing',
-      shipped: 'status-shipped',
-      delivered: 'status-delivered',
-      cancelled: 'status-cancelled',
-    };
-    return classes[status] || '';
+  const handleCancel = async () => {
+    if (!window.confirm(t('orders.cancelConfirm'))) return;
+    setBusy(true);
+    try {
+      const { data } = await apiClient.post(ENDPOINTS.orderCancel(orderNumber));
+      setOrder(data);
+      success(t('orders.cancelled', 'سفارش لغو شد'));
+    } catch (err) {
+      showError(err.response?.data?.error || t('orders.cancelFailed'));
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const getStatusSteps = (currentStatus) => {
-    const steps = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'];
-    const currentIndex = steps.indexOf(currentStatus);
-    return steps.map((step, index) => ({
-      name: step,
-      completed: index <= currentIndex,
-      active: index === currentIndex,
-    }));
-  };
+  if (loading) return <LoadingSpinner />;
 
-  if (loading) {
-    return <div className="loading">{t('common.loading')}</div>;
-  }
+  const crumbs = [
+    { to: '/', label: t('common.home') },
+    { to: '/orders', label: t('header.myOrders') },
+    { label: order ? order.order_number : t('orders.notFound') },
+  ];
 
-  if (error || !order) {
+  if (!order) {
     return (
-      <div className="order-detail-page">
-        <div className="error-state">
+      <div className="container">
+        <Breadcrumbs items={crumbs} />
+        <div className="empty-panel">
+          <Icon name="box" size={44} strokeWidth={1.4} />
           <h2>{t('orders.notFound')}</h2>
           <Link to="/orders" className="btn btn-primary">{t('orders.viewAll')}</Link>
         </div>
@@ -74,88 +81,115 @@ export default function OrderDetail() {
     );
   }
 
-  const statusSteps = getStatusSteps(order.status);
+  const status = orderStatus(order.status, lang);
+  const pay = paymentStatus(order.payment_status, lang);
+  const currentStep = ORDER_STEPS.indexOf(order.status);
 
   return (
-    <div className="order-detail-page">
-      <div className="order-header">
-        <div>
-          <h1>{t('orders.orderNumber', { number: order.order_number })}</h1>
-          <p className="order-date">
-            {t('orders.placedOn', { date: formatDate(order.created_at, i18n.language) })}
-          </p>
-        </div>
-        <span className={`order-status ${getStatusClass(order.status)}`}>
-          {order.status_display}
-        </span>
-      </div>
+    <div className="order-page">
+      <div className="container">
+        <Breadcrumbs items={crumbs} />
 
-      {order.status !== 'cancelled' && (
-        <div className="order-timeline">
-          {statusSteps.map((step, index) => (
-            <div
-              key={step.name}
-              className={`timeline-step ${step.completed ? 'completed' : ''} ${step.active ? 'active' : ''}`}
-            >
-              <div className="step-indicator">
-                {step.completed ? '✓' : index + 1}
-              </div>
-              <span className="step-name">{step.name}</span>
+        <header className="order-head">
+          <div>
+            <h1 className="display-title">
+              {t('orders.orderTitle', 'سفارش')} <span dir="ltr">{order.order_number}</span>
+            </h1>
+            <p className="muted">{t('orders.placedOn', { date: formatDate(order.created_at, lang) })}</p>
+          </div>
+          <div className="order-badges">
+            <span className={`status-pill tone-${status.tone}`}>{status.label}</span>
+            <span className={`status-pill tone-${pay.tone}`}>{pay.label}</span>
+          </div>
+        </header>
+
+        {canPay(order) && (
+          <section className="pay-banner">
+            <div>
+              <h2>{t('payment.payNowTitle', 'پرداخت سفارش')}</h2>
+              <p>{t('payment.payNowText', 'سفارش شما ثبت شده و پس از پرداخت، آماده‌سازی و ارسال می‌شود.')}</p>
             </div>
-          ))}
-        </div>
-      )}
-
-      <div className="order-content">
-        <div className="order-items">
-          <h2>{t('orders.items')}</h2>
-          {order.items.map((item, idx) => (
-            <div key={idx} className="order-item">
-              <div className="item-details">
-                <h3>{item.product_name}</h3>
-                <p>{t('orders.quantity')}: {item.quantity}</p>
+            <div className="pay-banner-actions">
+              <div className="gateway-chips" role="radiogroup" aria-label={t('checkout.paymentMethod', 'روش پرداخت')}>
+                {GATEWAYS.map((g) => (
+                  <button
+                    key={g.key}
+                    type="button"
+                    role="radio"
+                    aria-checked={gateway === g.key}
+                    className={`chip ${gateway === g.key ? 'active' : ''}`}
+                    onClick={() => setGateway(g.key)}
+                  >
+                    {lang === 'fa' ? g.fa : g.en}
+                  </button>
+                ))}
               </div>
-              <span className="item-price"><Price amount={item.subtotal} /></span>
+              <button className="btn btn-secondary btn-lg" onClick={handlePay} disabled={busy}>
+                <Icon name="card" size={20} /> {t('payment.payAmount', 'پرداخت')} <Price amount={order.total} />
+              </button>
             </div>
-          ))}
-        </div>
+          </section>
+        )}
 
-        <div className="order-info">
-          <div className="info-section">
-            <h2>{t('orders.shippingAddress')}</h2>
-            <p>{order.shipping_address}</p>
-            <p>
-              {order.shipping_city}, {order.shipping_state} {order.shipping_zip}
-            </p>
-            <p>{order.shipping_country}</p>
-            <p>{t('auth.phoneNumber')}: {order.shipping_phone}</p>
+        {order.status !== 'cancelled' && (
+          <ol className="order-timeline" aria-label={t('orders.progress', 'وضعیت سفارش')}>
+            {ORDER_STEPS.map((step, i) => (
+              <li key={step} className={i < currentStep ? 'done' : i === currentStep ? 'current' : ''}>
+                <span className="step-dot">{i < currentStep ? <Icon name="check" size={14} strokeWidth={2.4} /> : num(i + 1)}</span>
+                <span>{orderStatus(step, lang).label}</span>
+              </li>
+            ))}
+          </ol>
+        )}
+
+        <div className="cart-layout">
+          <div>
+            <section className="form-card">
+              <h2><Icon name="box" size={20} /> {t('orders.items')}</h2>
+              <ul className="order-lines">
+                {order.items.map((item) => (
+                  <li key={item.id}>
+                    <span className="order-line-name">{item.product_name}</span>
+                    <span className="muted">× {num(item.quantity)}</span>
+                    <Price amount={item.subtotal} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="form-card">
+              <h2><Icon name="truck" size={20} /> {t('orders.shippingAddress')}</h2>
+              <address className="order-address">
+                <p>{order.shipping_address}</p>
+                <p>{[order.shipping_state, order.shipping_city].filter(Boolean).join('، ')}</p>
+                <p>{t('checkout.zipCode')}: <span dir="ltr">{num(order.shipping_zip)}</span></p>
+                <p>{t('checkout.phone')}: <span dir="ltr">{num(order.shipping_phone)}</span></p>
+              </address>
+              {order.notes && <p className="muted">{t('checkout.orderNotes')}: {order.notes}</p>}
+            </section>
           </div>
 
-          <div className="info-section">
+          <aside className="summary-card">
             <h2>{t('cart.orderSummary')}</h2>
-            <div className="summary-row">
-              <span>{t('cart.subtotal')}</span>
-              <span><Price amount={order.subtotal} /></span>
-            </div>
-            <div className="summary-row">
-              <span>{t('cart.shipping')}</span>
-              <span>{order.shipping_cost == 0 ? t('cart.free') : <Price amount={order.shipping_cost} />}</span>
-            </div>
-            <div className="summary-row total">
-              <span>{t('cart.total')}</span>
-              <span><Price amount={order.total} /></span>
-            </div>
-          </div>
-
-          {(order.status === 'pending' || order.status === 'confirmed') && (
-            <button onClick={handleCancel} className="btn btn-outline">
-              {t('orders.cancelOrder')}
-            </button>
-          )}
+            <dl className="summary-rows">
+              <div><dt>{t('cart.subtotal')}</dt><dd><Price amount={order.subtotal} /></dd></div>
+              <div>
+                <dt>{t('cart.shipping')}</dt>
+                <dd>{Number(order.shipping_cost) === 0 ? <span className="free-tag">{t('cart.free')}</span> : <Price amount={order.shipping_cost} />}</dd>
+              </div>
+              <div className="summary-total"><dt>{t('cart.total')}</dt><dd><Price amount={order.total} /></dd></div>
+            </dl>
+            {canCancel(order) && order.payment_status !== 'paid' && (
+              <button onClick={handleCancel} className="btn btn-outline btn-full" disabled={busy}>
+                {t('orders.cancelOrder')}
+              </button>
+            )}
+            <Link to="/orders" className="link-arrow summary-back">
+              <Icon name="chevronRight" size={16} className="flip-ltr" /> {t('orders.backToOrders')}
+            </Link>
+          </aside>
         </div>
       </div>
-
-      <Link to="/orders" className="back-link">← {t('orders.backToOrders')}</Link>
     </div>
   );
 }
