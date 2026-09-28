@@ -365,7 +365,8 @@
     "viewAll": "همه سفارش‌ها",
     "orderTitle": "سفارش",
     "cancelled": "سفارش لغو شد",
-    "progress": "وضعیت سفارش"
+    "progress": "وضعیت سفارش",
+    "stepPlaced": "ثبت سفارش"
   },
   "favorites": {
     "myFavorites": "علاقه‌مندی‌های من",

@@ -136,7 +136,7 @@ export default function OrderDetail() {
             {ORDER_STEPS.map((step, i) => (
               <li key={step} className={i < currentStep ? 'done' : i === currentStep ? 'current' : ''}>
                 <span className="step-dot">{i < currentStep ? <Icon name="check" size={14} strokeWidth={2.4} /> : num(i + 1)}</span>
-                <span>{orderStatus(step, lang).label}</span>
+                <span>{step === 'pending' ? t('orders.stepPlaced', 'ثبت سفارش') : orderStatus(step, lang).label}</span>
               </li>
             ))}
           </ol>

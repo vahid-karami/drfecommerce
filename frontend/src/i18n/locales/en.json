@@ -365,7 +365,8 @@
     "viewAll": "All orders",
     "orderTitle": "Order",
     "cancelled": "Order cancelled",
-    "progress": "Order progress"
+    "progress": "Order progress",
+    "stepPlaced": "Order placed"
   },
   "favorites": {
     "myFavorites": "My Favorites",

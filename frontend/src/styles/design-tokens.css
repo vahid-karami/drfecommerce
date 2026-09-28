@@ -311,6 +311,7 @@ button {
   border: 1px solid var(--color-neutral-300);
   border-radius: var(--radius-md);
   font-family: inherit;
+  text-align: start; /* follows each field's own dir (phone/postal fields are LTR) */
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 

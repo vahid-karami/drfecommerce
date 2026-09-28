@@ -5,13 +5,11 @@ import apiClient from '../api/client';
 import { ENDPOINTS } from '../api/endpoints';
 import Icon from '../components/Icon';
 import Price from '../components/Price';
-import { toPersianNumber } from '../hooks/useLanguage';
 import { usePageMeta } from '../utils/seo';
 
 // Landing page the payment gateway redirects back to.
 export default function PaymentResult() {
-  const { t, i18n } = useTranslation();
-  const lang = i18n.language === 'fa' ? 'fa' : 'en';
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const [state, setState] = useState({ status: 'verifying' });
   const started = useRef(false);
@@ -42,7 +40,6 @@ export default function PaymentResult() {
       );
   }, [orderNumber, authority, gateway, t]);
 
-  const num = (v) => (lang === 'fa' ? toPersianNumber(v) : v);
 
   return (
     <div className="container">
@@ -62,7 +59,7 @@ export default function PaymentResult() {
             <p>{t('payment.successText', 'سفارش شما ثبت و تأیید شد. جزئیات ارسال را در صفحه سفارش ببینید.')}</p>
             <dl className="result-facts">
               <div><dt>{t('payment.orderNumber', 'شماره سفارش')}</dt><dd dir="ltr">{orderNumber}</dd></div>
-              {state.refId && <div><dt>{t('payment.refId', 'کد پیگیری')}</dt><dd dir="ltr">{num(state.refId)}</dd></div>}
+              {state.refId && <div><dt>{t('payment.refId', 'کد پیگیری')}</dt><dd dir="ltr">{state.refId}</dd></div>}
               {state.order && <div><dt>{t('payment.amount', 'مبلغ')}</dt><dd><Price amount={state.order.total} /></dd></div>}
             </dl>
             <div className="empty-actions">

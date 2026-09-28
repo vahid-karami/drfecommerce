@@ -656,11 +656,7 @@ html {
 
   .form-row .form-group {
     width: 100%;
-  }
-
-  
-
-  }
+  }}
 
 /* AUTH PAGE (Persian/Iranian style) */
 .auth-page {
@@ -738,24 +734,6 @@ html {
   color: var(--color-neutral-700);
 }
 
-.form-input {
-  width: 100%;
-  padding: var(--spacing-4) var(--spacing-5);
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-normal);
-  color: var(--color-neutral-800);
-  background-color: var(--color-neutral-50);
-  border: 2px solid var(--color-neutral-200);
-  border-radius: var(--radius-lg);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-50);
-}
-
 .otp-input {
   text-align: center;
   font-size: var(--font-size-xl);
@@ -788,10 +766,6 @@ html {
 /* RTL overrides for auth page */
 [dir="rtl"] .auth-page {
   direction: rtl;
-  text-align: right;
-}
-
-[dir="rtl"] .form-input {
   text-align: right;
 }
 

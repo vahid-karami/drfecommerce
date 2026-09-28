@@ -53,15 +53,7 @@
   direction: rtl;
 }
 
-[dir="rtl"] .form-input,
-[dir="rtl"] .form-select,
-[dir="rtl"] .form-textarea {
-  text-align: right;
-}
 
-[dir="rtl"] .btn svg {
-  transform: scaleX(-1);
-}
 
 [dir="rtl"] .guides-grid {
   direction: rtl;
