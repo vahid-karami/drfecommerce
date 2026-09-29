@@ -15,8 +15,8 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 40px;
-  padding: 0 16px;
+  min-height: 44px;
+  padding: var(--spacing-3) var(--spacing-4);
   border: 1px solid var(--color-neutral-300);
   border-radius: var(--radius-full);
   background: white;
@@ -475,4 +475,43 @@ tr.is-open .row-toggle .icon { transform: rotate(180deg); }
   .order-row-summary { display: none; }
   .order-row-actions { width: 100%; }
   .order-row-actions .btn { flex: 1; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Mobile optimizations (max-width: 768px)                            */
+/* ------------------------------------------------------------------ */
+@media (max-width: 768px) {
+  .account-link {
+    min-height: 44px;
+    padding: var(--spacing-2) var(--spacing-3);
+  }
+
+  .tab-row {
+    flex-wrap: wrap;
+    gap: var(--spacing-2);
+  }
+
+  .tab {
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .order-row-actions {
+    flex-wrap: wrap;
+    gap: var(--spacing-2);
+  }
+
+  .order-row-actions .btn {
+    min-height: 44px;
+    padding: var(--spacing-2) var(--spacing-4);
+    font-size: var(--font-size-xs);
+  }
+
+  .account-save {
+    flex-direction: column-reverse;
+  }
+
+  .account-save .btn {
+    width: 100%;
+  }
 }
