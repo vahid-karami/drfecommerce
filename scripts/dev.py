@@ -3,6 +3,7 @@
     python scripts/dev.py            # backend + frontend
     python scripts/dev.py backend    # backend only
     python scripts/dev.py frontend   # frontend only (expects the backend running)
+    python scripts/dev.py setup      # venv, packages, migrations, demo data; then exit
 
 First run sets everything up: virtualenv, Python and npm dependencies, migrations and
 demo data. It picks a free backend port (8000 upward) and tells Vite where it is through
@@ -43,15 +44,20 @@ def setup_backend():
         run([sys.executable, "-m", "venv", VENV])
         run([VENV_PY, "-m", "pip", "install", "-r", "requirements.txt"])
     run([VENV_PY, "manage.py", "migrate", "--noinput"])
-    count = subprocess.run(
-        [str(VENV_PY), "manage.py", "shell", "-c",
-         "from products.models import Product; print(Product.objects.count())"],
-        cwd=ROOT, capture_output=True, text=True,
-    ).stdout.strip()
-    if count == "0":
+    def count(expr):
+        code = f"from products.models import Product, ProductImage; print({expr})"
+        out = subprocess.run([str(VENV_PY), "manage.py", "shell", "-c", code],
+                             cwd=ROOT, capture_output=True, text=True).stdout.strip()
+        return int(out or 0)
+
+    # Uploaded images and db.sqlite3 are git-ignored, so a fresh clone starts without them.
+    if count("Product.objects.count()") == 0:
         print("Empty database: loading demo store...")
-        for cmd in ("seed_demo_store", "seed_category_images"):
-            run([VENV_PY, "manage.py", cmd])
+        run([VENV_PY, "manage.py", "seed_demo_store"])
+    elif count("ProductImage.objects.count()") == 0:
+        print("Products have no photos: attaching demo photos...")
+        run([VENV_PY, "manage.py", "seed_product_images"])
+    run([VENV_PY, "manage.py", "seed_category_images"])  # only fills categories with no image
 
 
 def setup_frontend():
@@ -65,6 +71,10 @@ def main():
     procs = []
     backend_port = int(os.environ.get("BACKEND_PORT", 0)) or free_port(8000)
     try:
+        if which == "setup":
+            setup_backend()
+            setup_frontend()
+            return
         if which in ("all", "backend"):
             setup_backend()
             print(f"Backend  -> http://localhost:{backend_port}")

@@ -13,6 +13,7 @@ database/
 .coverage
 .vscode/*
 !.vscode/launch.json
+!.vscode/tasks.json
 
 # Frontend
 frontend/node_modules/

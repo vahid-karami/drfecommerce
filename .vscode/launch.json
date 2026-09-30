@@ -13,16 +13,22 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/manage.py",
-      "args": ["runserver", "8000", "--noreload"],
+      "args": [
+        "runserver",
+        "8000",
+        "--noreload"
+      ],
       "django": true,
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "preLaunchTask": "Setup project"
     },
     {
       "name": "Debug frontend in Chrome",
       "type": "chrome",
       "request": "launch",
       "url": "http://localhost:5173",
-      "webRoot": "${workspaceFolder}/frontend/src"
+      "webRoot": "${workspaceFolder}/frontend/src",
+      "preLaunchTask": "Setup project"
     }
   ]
 }
