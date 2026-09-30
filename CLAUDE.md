@@ -12,6 +12,7 @@ Django REST backend + React SPA. Persian-first (RTL), English secondary. Visual 
 - Frontend: `frontend/` with React 19, Vite 8, react-i18next, vitest, oxlint.
 
 ## Commands (run from repo root on Windows)
+One command from any fresh clone: `python scripts/dev.py` (sets up venv, npm packages, migrations and demo data on first run, then starts backend and frontend; `backend` or `frontend` as an argument starts just one). Claude preview configs are in `.claude/launch.json` and VS Code debug configs in `.vscode/launch.json`.
 ```
 venv\Scripts\python manage.py runserver 8001      # port 8000 is taken on this PC
 venv\Scripts\python -m pytest                     # backend tests

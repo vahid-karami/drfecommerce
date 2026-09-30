@@ -11,7 +11,8 @@ database/
 
 .env
 .coverage
-.vscode/
+.vscode/*
+!.vscode/launch.json
 
 # Frontend
 frontend/node_modules/
