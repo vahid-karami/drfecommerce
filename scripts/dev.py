@@ -46,9 +46,14 @@ def setup_backend():
     run([VENV_PY, "manage.py", "migrate", "--noinput"])
     def count(expr):
         code = f"from products.models import Product, ProductImage; print({expr})"
-        out = subprocess.run([str(VENV_PY), "manage.py", "shell", "-c", code],
-                             cwd=ROOT, capture_output=True, text=True).stdout.strip()
-        return int(out or 0)
+        result = subprocess.run([str(VENV_PY), "manage.py", "shell", "-c", code],
+                                cwd=ROOT, capture_output=True, text=True)
+        if result.returncode != 0:  # never guess "0" here: the seeds below replace images
+            raise SystemExit(result.stderr)
+        out = result.stdout
+        # Django's shell may print an "objects imported automatically" banner first.
+        last = out.strip().splitlines()[-1] if out.strip() else "0"
+        return int(last) if last.isdigit() else 0
 
     # Uploaded images and db.sqlite3 are git-ignored, so a fresh clone starts without them.
     if count("Product.objects.count()") == 0:
