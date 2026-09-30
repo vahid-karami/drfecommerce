@@ -27,7 +27,8 @@ NPM = shutil.which("npm.cmd" if IS_WIN else "npm") or "npm"
 
 def run(cmd, **kw):
     print("  $", " ".join(str(c) for c in cmd))
-    subprocess.run([str(c) for c in cmd], check=True, cwd=kw.pop("cwd", ROOT), **kw)
+    env = {**os.environ, "PYTHONUTF8": "1"}  # seed commands print Persian text
+    subprocess.run([str(c) for c in cmd], check=True, cwd=kw.pop("cwd", ROOT), env=env, **kw)
 
 
 def free_port(start):
@@ -63,6 +64,7 @@ def setup_backend():
         print("Products have no photos: attaching demo photos...")
         run([VENV_PY, "manage.py", "seed_product_images"])
     run([VENV_PY, "manage.py", "seed_category_images"])  # only fills categories with no image
+    run([VENV_PY, "manage.py", "seed_sports"])  # sports + their photos; never replaces admin uploads
 
 
 def setup_frontend():
