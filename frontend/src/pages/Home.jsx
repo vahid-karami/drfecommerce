@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import apiClient from '../api/client';
 import { ENDPOINTS } from '../api/endpoints';
 import ProductCard from '../components/ProductCard';
 import { ProductCardSkeleton } from '../components/Skeletons';
-import HeroCarousel from '../components/HeroCarousel';
-import CardRail from '../components/CardRail';
+import Price from '../components/Price';
 import Icon from '../components/Icon';
-import { BODY_PARTS } from '../utils/bodyParts';
+import { BODY_PARTS, localized } from '../utils/bodyParts';
 import { usePageMeta } from '../utils/seo';
 import { useCategories, useSports, sportName } from '../utils/catalog';
 
@@ -22,6 +21,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const categories = useCategories();
   const sports = useSports();
+  const rootRef = useRef(null);
 
   usePageMeta({
     title: t('home.metaTitle', 'ساپورت‌ها و بریس‌های ورزشی و طبی'),
@@ -38,6 +38,28 @@ export default function Home() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Fade-and-rise for [data-reveal] blocks as they enter the viewport (skipped for reduced motion).
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || loading) return undefined;
+    const items = root.querySelectorAll('[data-reveal]');
+    if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      items.forEach((el) => el.classList.add('in'));
+      return undefined;
+    }
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.classList.add('in');
+          io.unobserve(e.target);
+        }
+      }),
+      { rootMargin: '0px 0px -8% 0px' },
+    );
+    items.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [loading, sports.length, categories.length]);
+
   // First product image per body part / category, used as the tile photo.
   const byInjury = useMemo(() => {
     const map = {};
@@ -47,6 +69,8 @@ export default function Home() {
     return map;
   }, [products]);
 
+  const bodyParts = BODY_PARTS.filter((p) => byInjury[p.key]);
+
   const byCategoryName = useMemo(() => {
     const map = {};
     products.forEach((p) => {
@@ -54,14 +78,6 @@ export default function Home() {
     });
     return map;
   }, [products]);
-
-  const bodyPartTiles = BODY_PARTS.filter((p) => byInjury[p.key]).map((p) => ({
-    key: p.key,
-    to: `/products?injury_type=${p.key}`,
-    title: lang === 'fa' ? p.fa : p.en,
-    subtitle: lang === 'fa' ? p.blurbFa : p.blurbEn,
-    image: imageOf(byInjury[p.key]),
-  }));
 
   const categoryTiles = categories.map((c) => ({
     key: c.slug,
@@ -80,38 +96,6 @@ export default function Home() {
       subtitle: t('products.productsCount', { count: s.product_count }),
       image: s.cover_image,
     }));
-
-  const onSale = products.find((p) => p.discount_price && Number(p.effective_price) < Number(p.price));
-
-  const slides = [
-    {
-      key: 'knee',
-      eyebrow: t('home.slide1Eyebrow', 'حمایت هدفمند از زانو'),
-      title: t('home.slide1Title', 'با خیال راحت به میدان برگرد'),
-      text: t('home.slide1Text', 'زانوبندها و اسلیوهای فشاری ما با پشتیبانی دقیق از مفصل، درد را کم می‌کنند و ثبات را به حرکت برمی‌گردانند.'),
-      cta: t('home.slide1Cta', 'خرید زانوبند'),
-      to: '/products?injury_type=knee',
-      image: imageOf(byInjury.knee),
-    },
-    {
-      key: 'back',
-      eyebrow: t('home.slide2Eyebrow', 'سلامت ستون فقرات'),
-      title: t('home.slide2Title', 'کمردرد را جدی بگیرید'),
-      text: t('home.slide2Text', 'ساپورت‌های کمری با فشار یکنواخت، عضلات را آرام می‌کنند و در کار روزانه و ورزش همراه شما هستند.'),
-      cta: t('home.slide2Cta', 'مشاهده ساپورت‌های کمر'),
-      to: '/products?injury_type=back',
-      image: imageOf(byInjury.back),
-    },
-    onSale && {
-      key: 'sale',
-      eyebrow: t('home.slide3Eyebrow', 'پیشنهاد ویژه'),
-      title: t('home.slide3Title', 'تخفیف‌های این هفته'),
-      text: t('home.slide3Text', 'منتخبی از پرفروش‌ترین ساپورت‌ها با قیمت ویژه، فقط برای مدت محدود.'),
-      cta: t('home.seeOffers', 'مشاهده پیشنهادها'),
-      to: '/products?on_sale=true',
-      image: imageOf(onSale),
-    },
-  ].filter((s) => s && s.image);
 
   const guides = [
     {
@@ -139,60 +123,70 @@ export default function Home() {
 
   const topSellers = (featured.length ? featured : products).slice(0, 4);
 
+  const spotlight = topSellers[0];
+  const spotlightName = spotlight && localized(spotlight, 'name', lang);
+
   return (
-    <div className="home">
-      <section className="home-hero">
-        <div className="container">
-          {loading ? <div className="hero-skeleton" /> : <HeroCarousel slides={slides} />}
+    <div className="home" ref={rootRef}>
+      <section className="home2-hero">
+        <div className="container home2-hero-grid">
+          <div className="home2-hero-copy">
+            <h1>{t('home.heroTitle', 'با خیال راحت به میدان برگرد')}</h1>
+            <p>{t('home.heroText', 'ساپورت و بریس مناسب هر عضو و هر ورزش، همراه با مشاوره تخصصی انتخاب سایز.')}</p>
+            <div className="home2-hero-actions">
+              <a href="#sports" className="btn btn-primary btn-lg">{t('home.heroCta', 'خرید بر اساس ورزش')}</a>
+              <a href="tel:+982112345678" className="btn btn-outline btn-lg">
+                <Icon name="phone" size={18} /> {t('home.heroCta2', 'مشاوره رایگان')}
+              </a>
+            </div>
+          </div>
+
+          <div className="home2-hero-visual">
+            <img src="/images/home/hero.jpg" alt="" fetchPriority="high" decoding="async" />
+            {spotlight && (
+              <Link to={`/products/${spotlight.slug}`} className="home2-spotlight">
+                {imageOf(spotlight) && <img src={imageOf(spotlight)} alt="" />}
+                <span className="home2-spotlight-text">
+                  <small>{t('home.topSellers', 'پرفروش‌ترین‌ها')}</small>
+                  <strong>{spotlightName}</strong>
+                  <Price amount={spotlight.effective_price ?? spotlight.price} />
+                </span>
+              </Link>
+            )}
+          </div>
         </div>
+
+        {bodyParts.length > 0 && (
+          <div className="container">
+            <nav className="home2-parts" aria-label={t('home.shopByBodyPart')}>
+              <span className="home2-parts-label">{t('home.partsLabel', 'کدام عضو آسیب دیده؟')}</span>
+              <div className="home2-parts-list">
+                {bodyParts.map((p) => (
+                  <Link key={p.key} to={`/products?injury_type=${p.key}`} className="home2-pill">
+                    {lang === 'fa' ? p.fa : p.en}
+                  </Link>
+                ))}
+              </div>
+            </nav>
+          </div>
+        )}
       </section>
 
-      {bodyPartTiles.length > 0 && (
-        <section className="band band-sky">
-          <div className="container">
-            <CardRail
-              eyebrow={t('home.findYourProduct', 'محصول مناسب خود را پیدا کنید')}
-              title={t('home.shopByBodyPart')}
-              cta={{ to: '/products', label: t('home.viewAllBodyParts', 'مشاهده همه') }}
-              items={bodyPartTiles}
-              variant="solid"
-            />
-          </div>
-        </section>
-      )}
-
       {sportTiles.length > 0 && (
-        <section className="band">
+        <section className="band" id="sports">
           <div className="container">
-            <CardRail
-              eyebrow={t('home.findYourProduct', 'محصول مناسب خود را پیدا کنید')}
-              title={t('home.shopBySport', 'خرید بر اساس ورزش')}
-              items={sportTiles}
-              variant="soft"
-              size="lg"
-            />
-          </div>
-        </section>
-      )}
-
-      {guides.length > 0 && (
-        <section className="band band-sky">
-          <div className="container rail-layout">
-            <div className="rail-intro">
-              <span className="eyebrow">{t('home.discover', 'بیشتر بدانید')}</span>
-              <h2 className="section-title">{t('home.howWeHelp', 'اسپورت‌مد چگونه کمک می‌کند')}</h2>
-              <p className="rail-desc">
-                {t('home.howWeHelpText', 'از درد مزمن مفاصل تا آسیب‌های ورزشی؛ راه‌هایی را ببینید که به شما کمک می‌کنند فعال بمانید.')}
-              </p>
-            </div>
-            <div className="guide-grid">
-              {guides.map((g) => (
-                <Link key={g.key} to={g.to} className="guide-card">
-                  <div className="guide-card-img"><img src={g.image} alt="" loading="lazy" /></div>
-                  <div className="guide-card-body">
-                    <h3>{g.title}</h3>
-                    <p>{g.text}</p>
-                  </div>
+            <header className="home2-head" data-reveal>
+              <h2 className="section-title">{t('home.shopBySport', 'خرید بر اساس ورزش')}</h2>
+              <p>{t('home.sportsText', 'ورزش خود را انتخاب کنید تا فقط محصولات مناسب آن را ببینید.')}</p>
+            </header>
+            <div className="home2-sports">
+              {sportTiles.map((s) => (
+                <Link key={s.key} to={s.to} className="home2-sport" data-reveal>
+                  {s.image && <img src={s.image} alt="" loading="lazy" />}
+                  <span className="home2-sport-label">
+                    <strong>{s.title}</strong>
+                    <small>{s.subtitle}</small>
+                  </span>
                 </Link>
               ))}
             </div>
@@ -200,14 +194,14 @@ export default function Home() {
         </section>
       )}
 
-      <section className="band">
+      <section className="band band-sky">
         <div className="container">
-          <div className="section-head-center">
+          <header className="home2-head home2-head-row" data-reveal>
             <h2 className="section-title">{t('home.topSellers', 'پرفروش‌ترین‌ها')}</h2>
             <Link to="/products" className="link-arrow">
               {t('home.viewAllProducts', 'همه محصولات')} <Icon name="arrowLeft" size={16} />
             </Link>
-          </div>
+          </header>
           <div className="product-grid">
             {loading
               ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)
@@ -217,24 +211,55 @@ export default function Home() {
       </section>
 
       {categoryTiles.length > 0 && (
+        <section className="band">
+          <div className="container">
+            <header className="home2-head home2-head-row" data-reveal>
+              <h2 className="section-title">{t('home.shopByType', 'خرید بر اساس نوع محصول')}</h2>
+              <Link to="/categories" className="link-arrow">
+                {t('home.viewAllCategories', 'همه دسته‌ها')} <Icon name="arrowLeft" size={16} />
+              </Link>
+            </header>
+            <div className="home2-types">
+              {categoryTiles.map((c) => (
+                <Link key={c.key} to={c.to} className="home2-type" data-reveal>
+                  <span className="home2-type-img">
+                    {c.image ? <img src={c.image} alt="" loading="lazy" /> : <Icon name="box" size={32} strokeWidth={1.4} />}
+                  </span>
+                  <strong>{c.title}</strong>
+                  <small>{c.subtitle}</small>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {guides.length > 0 && (
         <section className="band band-sky">
           <div className="container">
-            <CardRail
-              eyebrow={t('home.findYourProduct', 'محصول مناسب خود را پیدا کنید')}
-              title={t('home.shopByType', 'خرید بر اساس نوع محصول')}
-              cta={{ to: '/categories', label: t('home.viewAllCategories', 'همه دسته‌ها') }}
-              items={categoryTiles}
-              variant="soft"
-            />
+            <header className="home2-head" data-reveal>
+              <h2 className="section-title">{t('home.howWeHelp', 'اسپورت‌مد چگونه کمک می‌کند')}</h2>
+              <p>{t('home.howWeHelpText', 'از درد مزمن مفاصل تا آسیب‌های ورزشی؛ راه‌هایی را ببینید که به شما کمک می‌کنند فعال بمانید.')}</p>
+            </header>
+            <div className="home2-guides">
+              {guides.map((g, i) => (
+                <Link key={g.key} to={g.to} className={`home2-guide ${i === 0 ? 'is-lead' : ''}`} data-reveal>
+                  <img src={g.image} alt="" loading="lazy" />
+                  <span>
+                    <strong>{g.title}</strong>
+                    <small>{g.text}</small>
+                  </span>
+                </Link>
+              ))}
+            </div>
           </div>
         </section>
       )}
 
       <section className="band band-tight">
         <div className="container">
-          <div className="advice-banner">
+          <div className="advice-banner" data-reveal>
             <div>
-              <span className="eyebrow">{t('home.adviceEyebrow', 'مشاوره رایگان')}</span>
               <h2>{t('home.adviceTitle', 'در انتخاب سایز یا مدل مردد هستید؟')}</h2>
               <p>{t('home.adviceText', 'کارشناسان ما کمک می‌کنند ساپورتی را انتخاب کنید که دقیقاً به نیاز شما پاسخ می‌دهد.')}</p>
             </div>

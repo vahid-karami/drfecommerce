@@ -114,7 +114,12 @@
     "trustSupportTitle": "Expert support",
     "viewAllBodyParts": "View all",
     "viewAllCategories": "All categories",
-    "viewAllProducts": "All products"
+    "viewAllProducts": "All products",
+    "heroText": "Supports and braces for every joint and every sport, with expert help choosing your size.",
+    "heroCta": "Shop by sport",
+    "heroCta2": "Free advice",
+    "partsLabel": "Which area is hurting?",
+    "sportsText": "Pick your sport and see only the products that suit it."
   },
   "bodyParts": {
     "knee": "Knee",

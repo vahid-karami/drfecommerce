@@ -114,7 +114,12 @@
     "trustSupportTitle": "پشتیبانی تخصصی",
     "viewAllBodyParts": "مشاهده همه",
     "viewAllCategories": "همه دسته‌ها",
-    "viewAllProducts": "همه محصولات"
+    "viewAllProducts": "همه محصولات",
+    "heroText": "ساپورت و بریس مناسب هر عضو و هر ورزش، همراه با مشاوره تخصصی انتخاب سایز.",
+    "heroCta": "خرید بر اساس ورزش",
+    "heroCta2": "مشاوره رایگان",
+    "partsLabel": "کدام عضو آسیب دیده؟",
+    "sportsText": "ورزش خود را انتخاب کنید تا فقط محصولات مناسب آن را ببینید."
   },
   "bodyParts": {
     "knee": "زانو",
