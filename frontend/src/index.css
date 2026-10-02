@@ -7,6 +7,7 @@
 @import './styles/product.css';
 @import './styles/checkout.css';
 @import './styles/account.css';
+@import './styles/auth.css';
 
 /* App Layout */
 .app {

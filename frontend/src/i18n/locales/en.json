@@ -339,12 +339,26 @@
     "invalidCredentials": "Incorrect username or password",
     "invalidOtp": "Invalid verification code",
     "invalidPhone": "Please enter a valid phone number (e.g. 09123456789)",
-    "loginSubtitle": "Sign in to your SportMed account",
+    "loginSubtitle": "Sign in to track orders and check out faster.",
     "otpSendFailed": "Could not send the verification code",
     "otpSent": "Verification code sent",
     "otpSentTo": "Code sent to",
     "passwordPlaceholder": "Enter your password",
-    "registrationFailed": "Registration failed. Please check your details."
+    "registrationFailed": "Registration failed. Please check your details.",
+    "visualTitle": "Support for every move",
+    "perk": {
+      "authentic": "Guaranteed authentic products",
+      "shipping": "Fast delivery nationwide",
+      "support": "Expert help choosing size and model"
+    },
+    "registerLink": "Sign up",
+    "method": "Sign-in method",
+    "loginWithOTPShort": "One-time code",
+    "loggingIn": "Signing in...",
+    "mobile": "Mobile number",
+    "otpHint": "We'll send a 6-digit code to this number.",
+    "sending": "Sending...",
+    "verifying": "Checking..."
   },
   "orders": {
     "myOrders": "My Orders",

@@ -3,7 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import AuthLayout from '../components/AuthLayout';
+import { toEnglishDigits } from '../utils/digits';
 import { validateIranianPhone } from '../utils/iranianPhone';
+import { usePageMeta } from '../utils/seo';
 
 export default function Login() {
   const { t } = useTranslation();
@@ -19,20 +22,29 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  usePageMeta({ title: t('common.login', 'ورود') });
+
+  const switchMethod = (method) => {
+    setAuthMethod(method);
+    setStep('phone');
+    setError('');
+  };
+
   const handleSendOTP = async (e) => {
     e.preventDefault();
-    if (!phone) {
+    const number = toEnglishDigits(phone).trim();
+    if (!number) {
       setError(t('auth.phoneNumber', 'شماره تلفن') + ' ' + t('common.required', 'الزامی است'));
       return;
     }
-    if (!validateIranianPhone(phone)) {
+    if (!validateIranianPhone(number)) {
       setError(t('auth.invalidPhone', 'لطفاً شماره موبایل معتبر وارد کنید'));
       return;
     }
     setLoading(true);
     setError('');
     try {
-      await sendOTP(phone, 'login');
+      await sendOTP(number, 'login');
       setStep('otp');
       success(t('auth.otpSent', 'کد تایید ارسال شد'));
     } catch (err) {
@@ -46,14 +58,15 @@ export default function Login() {
 
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
-    if (!code || code.length !== 6) {
+    const digits = toEnglishDigits(code).trim();
+    if (digits.length !== 6) {
       setError(t('auth.invalidCode', 'لطفاً کد ۶ رقمی را وارد کنید'));
       return;
     }
     setLoading(true);
     setError('');
     try {
-      await verifyOTP(phone, code, 'login');
+      await verifyOTP(toEnglishDigits(phone).trim(), digits, 'login');
       success(t('auth.loginSuccess', 'ورود موفقیت‌آمیز!'));
       navigate('/');
     } catch (err) {
@@ -67,7 +80,7 @@ export default function Login() {
 
   const handlePasswordLogin = async (e) => {
     e.preventDefault();
-    const identifier = phone.trim();
+    const identifier = toEnglishDigits(phone).trim();
     if (!identifier || !password) {
       setError(t('auth.fillFields', 'لطفاً تمام فیلدها را پر کنید'));
       return;
@@ -95,130 +108,127 @@ export default function Login() {
     }
   };
 
+  const submitLabel = (idle, busy) => (loading ? <><span className="btn-spinner" aria-hidden="true" />{busy}</> : idle);
+
   return (
-    <div className="auth-page">
-      <div className="auth-container">
-        <div className="auth-card">
-          <div className="auth-header">
-            <h1 className="auth-title">{t('auth.welcomeBack', 'ورود به حساب کاربری')}</h1>
-            <p className="auth-subtitle">{t('auth.loginSubtitle', 'ورود به حساب کاربری سپر مدیکال')}</p>
-          </div>
-
-          {error && <div className="error-message">{error}</div>}
-
-          <div className="auth-method-switcher">
-            <button
-              type="button"
-              onClick={() => setAuthMethod('password')}
-              className={`method-btn ${authMethod === 'password' ? 'active' : ''}`}
-            >
-              {t('auth.loginWithPassword', 'ورود با رمز عبور')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setAuthMethod('otp')}
-              className={`method-btn ${authMethod === 'otp' ? 'active' : ''}`}
-            >
-              {t('auth.loginWithOTP', 'ورود با کد یکبار مصرف')}
-            </button>
-          </div>
-
-          {authMethod === 'otp' ? (
-            <>
-              {step === 'phone' ? (
-                <form onSubmit={handleSendOTP}>
-                  <div className="form-group">
-                    <label htmlFor="phone" className="form-label">شماره موبایل</label>
-                    <input
-                      type="tel"
-                      id="phone"
-                      placeholder="مثال: 09121234567"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="form-input"
-                      dir="ltr"
-                      required
-                    />
-                  </div>
-                  <button type="submit" disabled={loading} className="btn btn-primary btn-lg btn-full">
-                    {loading ? 'در حال ارسال...' : 'ارسال کد تایید'}
-                  </button>
-                </form>
-              ) : (
-                <form onSubmit={handleVerifyOTP}>
-                  <div className="form-group">
-                    <label htmlFor="code" className="form-label">کد تایید</label>
-                    <input
-                      type="text"
-                      id="code"
-                      placeholder="۶ رقم کد تایید"
-                      value={code}
-                      onChange={(e) => setCode(e.target.value)}
-                      maxLength={6}
-                      className="form-input otp-input"
-                      required
-                    />
-                  </div>
-                  <button type="submit" disabled={loading} className="btn btn-primary btn-lg btn-full">
-                    {loading ? 'در حال بررسی...' : 'تایید و ورود'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStep('phone')}
-                    className="btn btn-ghost btn-sm btn-full"
-                  >
-                    ویرایش شماره موبایل
-                  </button>
-                </form>
-              )}
-            </>
-          ) : (
-            <form onSubmit={handlePasswordLogin}>
-              <div className="form-group">
-                <label htmlFor="phone" className="form-label">
-                  {t('auth.usernameOrPhone', 'نام کاربری یا شماره موبایل')}
-                </label>
-                <input
-                  type="text"
-                  id="phone"
-                  placeholder="مثال: 09121234567 یا نام کاربری"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="form-input"
-                  dir="ltr"
-                  autoComplete="username"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="password" className="form-label">
-                  {t('auth.password', 'رمز عبور')}
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  placeholder={t('auth.passwordPlaceholder', 'رمز عبور خود را وارد کنید')}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="form-input"
-                  autoComplete="current-password"
-                  required
-                />
-              </div>
-              <button type="submit" disabled={loading} className="btn btn-primary btn-lg btn-full">
-                {loading ? t('common.loading', 'در حال ورود...') : t('common.login', 'ورود')}
-              </button>
-            </form>
-          )}
-
-          <div className="auth-footer">
-            <p>
-              حساب کاربری ندارید؟ <Link to="/register">ثبت‌نام کنید</Link>
-            </p>
-          </div>
-        </div>
+    <AuthLayout
+      title={t('auth.welcomeBack', 'ورود به حساب کاربری')}
+      subtitle={t('auth.loginSubtitle', 'برای پیگیری سفارش‌ها و خرید سریع‌تر وارد شوید.')}
+      footer={
+        <>
+          {t('auth.dontHaveAccount', 'حساب کاربری ندارید؟')}{' '}
+          <Link to="/register">{t('auth.registerLink', 'ثبت‌نام کنید')}</Link>
+        </>
+      }
+    >
+      <div className="auth-tabs" role="tablist" aria-label={t('auth.method', 'روش ورود')}>
+        {[
+          ['password', t('auth.loginWithPassword', 'ورود با رمز عبور')],
+          ['otp', t('auth.loginWithOTPShort', 'کد یکبار مصرف')],
+        ].map(([method, label]) => (
+          <button
+            key={method}
+            type="button"
+            role="tab"
+            aria-selected={authMethod === method}
+            className={authMethod === method ? 'active' : ''}
+            onClick={() => switchMethod(method)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
-    </div>
+
+      {error && <div className="auth-error" role="alert">{error}</div>}
+
+      {authMethod === 'password' && (
+        <form onSubmit={handlePasswordLogin} className="auth-form" noValidate>
+          <div className="auth-field">
+            <label htmlFor="identifier">{t('auth.usernameOrPhone', 'نام کاربری یا شماره موبایل')}</label>
+            <input
+              id="identifier"
+              type="text"
+              inputMode="text"
+              placeholder="09121234567"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              dir="ltr"
+              autoComplete="username"
+              aria-invalid={Boolean(error) || undefined}
+            />
+          </div>
+          <div className="auth-field">
+            <label htmlFor="password">{t('auth.password', 'رمز عبور')}</label>
+            <input
+              id="password"
+              type="password"
+              placeholder={t('auth.passwordPlaceholder', 'رمز عبور خود را وارد کنید')}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              dir="ltr"
+              autoComplete="current-password"
+              aria-invalid={Boolean(error) || undefined}
+            />
+          </div>
+          <button type="submit" disabled={loading} className="auth-submit">
+            {submitLabel(t('common.login', 'ورود'), t('auth.loggingIn', 'در حال ورود...'))}
+          </button>
+        </form>
+      )}
+
+      {authMethod === 'otp' && step === 'phone' && (
+        <form onSubmit={handleSendOTP} className="auth-form" noValidate>
+          <div className="auth-field">
+            <label htmlFor="otp-phone">{t('auth.mobile', 'شماره موبایل')}</label>
+            <input
+              id="otp-phone"
+              type="tel"
+              inputMode="tel"
+              placeholder="09121234567"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              dir="ltr"
+              autoComplete="tel"
+              aria-invalid={Boolean(error) || undefined}
+            />
+            <small>{t('auth.otpHint', 'کد تایید شش‌رقمی برای این شماره ارسال می‌شود.')}</small>
+          </div>
+          <button type="submit" disabled={loading} className="auth-submit">
+            {submitLabel(t('auth.sendOTP', 'ارسال کد تأیید'), t('auth.sending', 'در حال ارسال...'))}
+          </button>
+        </form>
+      )}
+
+      {authMethod === 'otp' && step === 'otp' && (
+        <form onSubmit={handleVerifyOTP} className="auth-form" noValidate>
+          <div className="auth-field">
+            <label htmlFor="otp-code">{t('auth.verificationCode', 'کد تأیید')}</label>
+            <input
+              id="otp-code"
+              type="text"
+              inputMode="numeric"
+              placeholder="------"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              maxLength={6}
+              dir="ltr"
+              className="otp-code"
+              autoComplete="one-time-code"
+              aria-invalid={Boolean(error) || undefined}
+              autoFocus
+            />
+            <small>
+              {t('auth.otpSentTo', 'کد ارسال شد به')} <bdi dir="ltr">{toEnglishDigits(phone).trim()}</bdi>
+            </small>
+          </div>
+          <button type="submit" disabled={loading} className="auth-submit">
+            {submitLabel(t('auth.verifyLogin', 'تأیید و ورود'), t('auth.verifying', 'در حال بررسی...'))}
+          </button>
+          <button type="button" className="auth-link-btn" onClick={() => { setStep('phone'); setCode(''); setError(''); }}>
+            {t('auth.changePhone', 'تغییر شماره موبایل')}
+          </button>
+        </form>
+      )}
+    </AuthLayout>
   );
 }
-
